@@ -4,7 +4,7 @@ import os
 
 # Configure the API key (it will automatically pick up from the environment variable)
 # Alternatively, you can pass it directly: genai.configure(api_key="YOUR_API_KEY")
-genai.configure(api_key="AIzaSyCAs7Ltw75a6KWaudV8seVvuE3hwDG-e9k")
+genai.configure(api_key="")
 
 # 1. Load the model (use a multimodal model like 'gemini-2.5-flash' or 'gemini-2.0-pro')
 model = genai.GenerativeModel('gemini-2.5-flash')
