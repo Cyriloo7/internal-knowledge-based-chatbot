@@ -1,0 +1,5 @@
+chroma_vectorstore/
+/.env
+venv/
+/__pycache__/
+Documents/
