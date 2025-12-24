@@ -40,7 +40,7 @@ vision_model = genai.GenerativeModel('models/gemini-2.5-flash')
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 
-pdf_path = r"Documents\AI_ML R&D - Phase 2.pdf"
+pdf_path = r"Documents\AI_ML R&D v1.docx.pdf"
 
 if not os.path.exists(pdf_path):
     raise FileExistsError(f"The file {pdf_path} does not exist.")
@@ -199,14 +199,20 @@ You have access to the following tool:
 
 ### Tool Usage Rules
 - When a user query requires information from the documents, you MUST call the document_search_tool.
+- A query requires document search if it asks about:
+  - Specific facts, figures, diagrams, tables, or processes
+  - Content that could plausibly exist in the provided PDFs
+  - Anything referencing "this document", "the manual", or "the report"
 - Formulate a concise and meaningful search query when calling the tool.
 - You may call the tool multiple times if necessary.
-- Do NOT fabricate content that is not present in the retrieved documents.
+- Do NOT infer, assume, or fabricate information that is not explicitly supported by the retrieved documents.
 
 ### Answering Rules
 - Synthesize information from all relevant retrieved results (text + image-derived content).
 - Prefer factual, technical, and structured explanations.
+- If only part of the answer is found, answer only that part and clearly state what is missing.
 - If information is insufficient or not found in the documents, clearly state that.
+- If multiple sources conflict, report the discrepancy and cite all relevant pages.
 
 ### Citations & References (MANDATORY)
 At the end of every answer that uses document information:
@@ -214,7 +220,8 @@ At the end of every answer that uses document information:
 - Mention the page number(s) referenced
 - Clearly indicate whether the information came from:
   - Text content
-  - Image (caption or OCR)
+  - Image caption
+  - Image OCR
 
 ### Response Format
 - Provide a clear and complete answer first.
@@ -223,10 +230,11 @@ At the end of every answer that uses document information:
 References:
 - Document: <document name>
   Page: <page number>
-  Type: Text / Image
+  Type: Text / Image Caption / Image OCR
 
 ### General Behavior
 - Be concise but thorough.
+- Use cautious language when information is ambiguous.
 - Do not expose internal tool execution details.
 - Do not mention embeddings, vector stores, or implementation details.
 - If the question does not require document lookup, answer using general knowledge without calling tools.
