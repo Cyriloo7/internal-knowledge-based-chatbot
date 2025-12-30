@@ -346,10 +346,6 @@ Contributions are welcome! Please:
 4. Push to the branch
 5. Create a Pull Request
 
-## License
-
-MIT License - feel free to use this project for commercial or personal use.
-
 ## Support
 
 For issues or questions:
