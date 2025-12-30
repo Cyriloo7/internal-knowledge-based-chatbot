@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat - RAG Chatbot</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <body>
+    <div class="app-container">
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-small">
+            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+              <rect width="60" height="60" rx="12" fill="#4F46E5" />
+              <path
+                d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                stroke="white"
+                stroke-width="3"
+                fill="none"
+              />
+              <circle cx="30" cy="30" r="8" fill="white" />
+            </svg>
+          </div>
+          <h2>RAG Assistant</h2>
+        </div>
+
+        <ul class="nav-menu">
+          <li>
+            <a href="/dashboard">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              Dashboard
+            </a>
+          </li>
+          <li class="active">
+            <a href="/chat" onclick="showUploadModal(); return false;">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                ></path>
+              </svg>
+              Chat
+            </a>
+          </li>
+          {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+          <li>
+            <a href="#" onclick="showUploadModal()">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              Upload Documents
+            </a>
+          </li>
+          {% endif %} {% if user.role == 'admin' %}
+          <li>
+            <a href="/admin">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+              </svg>
+              Admin Panel
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="avatar">{{ user.username[0].upper() }}</div>
+            <div>
+              <div class="user-name">{{ user.username }}</div>
+              <div class="user-role">{{ user.role }}</div>
+            </div>
+          </div>
+          <a href="/logout" class="btn-logout">Logout</a>
+        </div>
+      </nav>
+
+      <main class="chat-container">
+        <div class="chat-header">
+          <h1>Document Q&A</h1>
+          <div class="collection-selector">
+            <label for="collection">Collection:</label>
+            <select id="collection">
+              {% for level in collections %}
+              <option value="{{ level }}">
+                {{ level|replace('-', ' ')|title }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="message-system">
+            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+              <rect width="60" height="60" rx="12" fill="#EEF2FF" />
+              <path
+                d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                stroke="#4F46E5"
+                stroke-width="3"
+                fill="none"
+              />
+              <circle cx="30" cy="30" r="8" fill="#4F46E5" />
+            </svg>
+            <div>
+              <p><strong>Welcome to RAG Assistant!</strong></p>
+              <p>
+                I can help you find information from your indexed documents. Ask
+                me anything about the documents you have access to.
+              </p>
+              <p class="help-text">
+                Try asking: "What are the main topics in the document?" or
+                "Summarize the key findings."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-container">
+          <form id="chatForm">
+            <textarea
+              id="messageInput"
+              placeholder="Ask a question about your documents..."
+              rows="1"
+              required
+            ></textarea>
+            <button type="submit" id="sendButton">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+
+    <!-- Upload Modal -->
+    {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeUploadModal()">&times;</span>
+        <h2>Upload Document</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="pdfFile">Select PDF File</label>
+            <input
+              type="file"
+              id="pdfFile"
+              name="file"
+              accept=".pdf"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="collectionName">Collection Name</label>
+            <select id="collectionName" name="collection_name" required>
+              <option value="level-1">Level 1 (General)</option>
+
+              {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+              <option value="level-2">Level 2 (Team)</option>
+              {% endif %} {% if user.role in ['a-manager', 'admin'] %}
+              <option value="level-3">Level 3 (Department)</option>
+              {% endif %} {% if user.role == 'admin' %}
+              <option value="level-4">Level 4 (Organization)</option>
+              {% endif %}
+            </select>
+          </div>
+          <!-- <div class="form-group">
+            <label for="accessLevel">Access Level</label>
+            <select id="accessLevel" name="access_level">
+              <option value="user">User</option>
+              <option value="b-manager">B-Manager</option>
+              <option value="a-manager">A-Manager</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div> -->
+          <div id="uploadProgress" style="display: none">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="uploadStatus">Uploading and indexing...</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Upload & Index</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <script>
+      const chatMessages = document.getElementById('chatMessages');
+      const chatForm = document.getElementById('chatForm');
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      const collectionSelect = document.getElementById('collection');
+
+      // Auto-resize textarea
+      messageInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+      });
+
+      // Handle Enter key (Shift+Enter for new line)
+      messageInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              chatForm.dispatchEvent(new Event('submit'));
+          }
+      });
+
+      function copyAssistantMessage(button) {
+          const messageContent = button
+              .closest('.message-content')
+              .querySelector('.assistant-text');
+
+          const text = messageContent.innerText;
+
+          navigator.clipboard.writeText(text).then(() => {
+              const original = button.innerText;
+              button.innerText = '✅';
+              setTimeout(() => {
+                  button.innerText = original;
+              }, 1200);
+          }).catch(() => {
+              alert('Failed to copy');
+          });
+      }
+
+
+      // Add message to chat
+      function addMessage(content, isUser = false) {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message ${isUser ? 'message-user' : 'message-assistant'}`;
+
+          if (isUser) {
+              messageDiv.innerHTML = `
+                  <div class="avatar-small">{{ user.username[0].upper() }}</div>
+                  <div class="message-content">${escapeHtml(content)}</div>
+              `;
+          } else {
+              messageDiv.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
+                    <rect width="60" height="60" rx="12" fill="#EEF2FF"/>
+                    <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                          stroke="#4F46E5" stroke-width="3" fill="none"/>
+                    <circle cx="30" cy="30" r="8" fill="#4F46E5"/>
+                </svg>
+                <div class="message-content markdown-content">
+                    <button class="copy-btn" title="Copy response">📋</button>
+                    <div class="assistant-text">
+                        ${formatResponse(content)}
+                    </div>
+                </div>
+              `;
+          }
+
+
+          chatMessages.appendChild(messageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function addLoadingMessage() {
+          const loadingDiv = document.createElement('div');
+          loadingDiv.className = 'message message-assistant message-loading';
+          loadingDiv.id = 'loadingMessage';
+          loadingDiv.innerHTML = `
+              <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
+                  <rect width="60" height="60" rx="12" fill="#EEF2FF"/>
+                  <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z" stroke="#4F46E5" stroke-width="3" fill="none"/>
+                  <circle cx="30" cy="30" r="8" fill="#4F46E5"/>
+              </svg>
+              <div class="message-content">
+                  <div class="typing-indicator">
+                      <span></span><span></span><span></span>
+                  </div>
+              </div>
+          `;
+          chatMessages.appendChild(loadingDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function removeLoadingMessage() {
+          const loading = document.getElementById('loadingMessage');
+          if (loading) loading.remove();
+      }
+
+      function formatResponse(text) {
+          // Convert Markdown → HTML
+          const html = marked.parse(text, {
+              breaks: true,
+              gfm: true
+          });
+
+          return html;
+      }
+
+
+      function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+      }
+
+      // Handle form submission
+      chatForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const message = messageInput.value.trim();
+          if (!message) return;
+
+          const collection = collectionSelect.value;
+
+          // Add user message
+          addMessage(message, true);
+          messageInput.value = '';
+          messageInput.style.height = 'auto';
+
+          // Show loading
+          addLoadingMessage();
+          sendButton.disabled = true;
+
+          try {
+              const response = await fetch('/api/chat', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                      message: message,
+                      collection: collection
+                  })
+              });
+
+              const data = await response.json();
+
+              removeLoadingMessage();
+
+              if (response.ok) {
+                  addMessage(data.response);
+              } else {
+                  addMessage(`Error: ${data.error || 'Failed to get response'}`, false);
+              }
+          } catch (error) {
+              removeLoadingMessage();
+              addMessage('Error: Unable to connect to the server', false);
+          } finally {
+              sendButton.disabled = false;
+              messageInput.focus();
+          }
+      });
+
+      // Upload Modal Functions
+      function showUploadModal() {
+          document.getElementById('uploadModal').style.display = 'flex';
+      }
+
+      function closeUploadModal() {
+          document.getElementById('uploadModal').style.display = 'none';
+      }
+
+      // Handle upload
+      {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+      document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const formData = new FormData(e.target);
+          const uploadProgress = document.getElementById('uploadProgress');
+          const uploadStatus = document.getElementById('uploadStatus');
+
+          uploadProgress.style.display = 'block';
+
+          try {
+              const response = await fetch('/api/upload', {
+                  method: 'POST',
+                  body: formData
+              });
+
+              const data = await response.json();
+
+              if (response.ok) {
+                  uploadStatus.textContent = 'Upload successful! Refreshing...';
+                  setTimeout(() => {
+                      location.reload();
+                  }, 1500);
+              } else {
+                  uploadStatus.textContent = `Error: ${data.error}`;
+              }
+          } catch (error) {
+              uploadStatus.textContent = 'Error: Upload failed';
+          }
+      });
+      {% endif %}
+
+      // Close modal on outside click
+      window.onclick = function(event) {
+          const modal = document.getElementById('uploadModal');
+          if (event.target == modal) {
+              closeUploadModal();
+          }
+      }
+
+      function fallbackCopyText(text) {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+
+          // Prevent scrolling to bottom
+          textarea.style.position = 'fixed';
+          textarea.style.top = '0';
+          textarea.style.left = '0';
+
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+
+          try {
+              document.execCommand('copy');
+          } catch (err) {
+              console.error('Fallback copy failed', err);
+          }
+
+          document.body.removeChild(textarea);
+      }
+      // Copy assistant message (safe + fallback)
+      chatMessages.addEventListener('click', async (e) => {
+          const copyBtn = e.target.closest('.copy-btn');
+          if (!copyBtn) return;
+
+          const assistantText = copyBtn
+              .closest('.message-content')
+              .querySelector('.assistant-text');
+
+          if (!assistantText) return;
+
+          const textToCopy = assistantText.innerText;
+
+          try {
+              await navigator.clipboard.writeText(textToCopy);
+          } catch (err) {
+              // Fallback for blocked clipboard API
+              fallbackCopyText(textToCopy);
+          }
+
+          const original = copyBtn.innerText;
+          copyBtn.innerText = '✅';
+          setTimeout(() => {
+              copyBtn.innerText = original;
+          }, 1200);
+      });
+    </script>
+  </body>
+</html>

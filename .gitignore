@@ -3,3 +3,5 @@ chroma_vectorstore/
 venv/
 /__pycache__/
 Documents/
+uploads/
+instance/

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                    <rect width="60" height="60" rx="12" fill="#4F46E5"/>
+                    <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z" stroke="white" stroke-width="3" fill="none"/>
+                    <circle cx="30" cy="30" r="8" fill="white"/>
+                </svg>
+            </div>
+            <h1>RAG Document Assistant</h1>
+            <p class="subtitle">Sign in to access intelligent document search</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                
+                <div id="errorMessage" class="error-message"></div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    <span id="loginText">Sign In</span>
+                    <span id="loginSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div class="demo-accounts">
+                <p class="demo-title">Demo Accounts:</p>
+                <ul>
+                    <li><strong>Admin:</strong> admin / admin123</li>
+                    <li><strong>A-Manager:</strong> manager-a / pass123</li>
+                    <li><strong>B-Manager:</strong> manager-b / pass123</li>
+                    <li><strong>User:</strong> user / user123</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const loginText = document.getElementById('loginText');
+            const loginSpinner = document.getElementById('loginSpinner');
+            
+            loginText.style.display = 'none';
+            loginSpinner.style.display = 'inline-block';
+            errorMessage.textContent = '';
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    errorMessage.textContent = data.message || 'Invalid credentials';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'An error occurred. Please try again.';
+            } finally {
+                loginText.style.display = 'inline';
+                loginSpinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
