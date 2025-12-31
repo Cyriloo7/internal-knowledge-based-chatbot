@@ -1,342 +1,426 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Panel - RAG Chatbot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
     <div class="app-container">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-small">
-                    <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-                        <rect width="60" height="60" rx="12" fill="#4F46E5"/>
-                        <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z" stroke="white" stroke-width="3" fill="none"/>
-                        <circle cx="30" cy="30" r="8" fill="white"/>
-                    </svg>
-                </div>
-                <h2>RAG Assistant</h2>
-            </div>
-            
-            <ul class="nav-menu">
-                <li>
-                    <a href="/dashboard">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="/chat">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        Chat
-                    </a>
-                </li>
-                <li class="active">
-                    <a href="/admin">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-                        </svg>
-                        Admin Panel
-                    </a>
-                </li>
-            </ul>
-            
-            <div class="sidebar-footer">
-                <a href="/logout" class="btn-logout">Logout</a>
-            </div>
-        </nav>
-        
-        <main class="main-content">
-            <div class="page-header">
-                <h1>Admin Panel</h1>
-                <button class="btn btn-primary" onclick="showAddUserModal()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add New User
-                </button>
-            </div>
-            
-            <div class="admin-tabs">
-                <button class="tab-button active" onclick="showTab('users')">Users Management</button>
-                <button class="tab-button" onclick="showTab('documents')">Documents</button>
-            </div>
-            
-            <div id="usersTab" class="tab-content active">
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            {% for user in users %}
-                            <tr>
-                                <td>{{ user.id }}</td>
-                                <td>{{ user.username }}</td>
-                                <td>{{ user.email }}</td>
-                                <td><span class="badge badge-{{ user.role }}">{{ user.role }}</span></td>
-                                <td>
-                                    <span class="status-badge {% if user.is_active %}status-active{% else %}status-inactive{% endif %}">
-                                        {{ 'Active' if user.is_active else 'Inactive' }}
-                                    </span>
-                                </td>
-                                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
-                                <td>
-                                    <button class="btn-icon" onclick="editUser({{ user.id }})" title="Edit">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="btn-icon btn-danger" onclick="deleteUser({{ user.id }})" title="Delete">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        </svg>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div id="documentsTab" class="tab-content">
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Filename</th>
-                                <th>Collection</th>
-                                <th>Access Level</th>
-                                <th>Uploaded By</th>
-                                <th>Uploaded At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for doc in documents %}
-                            <tr>
-                                <td>{{ doc.id }}</td>
-                                <td>{{ doc.filename }}</td>
-                                <td><code>{{ doc.collection_name }}</code></td>
-                                <td><span class="badge badge-{{ doc.access_level }}">{{ doc.access_level }}</span></td>
-                                <td>User #{{ doc.uploaded_by }}</td>
-                                <td>{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-small">
+            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+              <rect width="60" height="60" rx="12" fill="#4F46E5" />
+              <path
+                d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                stroke="white"
+                stroke-width="3"
+                fill="none"
+              />
+              <circle cx="30" cy="30" r="8" fill="white" />
+            </svg>
+          </div>
+          <h2>RAG Assistant</h2>
+        </div>
+
+        <ul class="nav-menu">
+          <li>
+            <a href="/dashboard">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/chat">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                ></path>
+              </svg>
+              Chat
+            </a>
+          </li>
+          <li class="active">
+            <a href="/admin">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+              </svg>
+              Admin Panel
+            </a>
+          </li>
+        </ul>
+
+        <div class="sidebar-footer">
+          <a href="/logout" class="btn-logout">Logout</a>
+        </div>
+      </nav>
+
+      <main class="main-content">
+        <div class="page-header">
+          <h1>Admin Panel</h1>
+          <button class="btn btn-primary" onclick="showAddUserModal()">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add New User
+          </button>
+        </div>
+
+        <div class="admin-tabs">
+          <button class="tab-button active" onclick="showTab('users')">
+            Users Management
+          </button>
+          <button class="tab-button" onclick="showTab('documents')">
+            Documents
+          </button>
+        </div>
+
+        <div id="usersTab" class="tab-content active">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                {% for user in users %}
+                <tr>
+                  <td>{{ user.id }}</td>
+                  <td>{{ user.username }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="badge badge-{{ user.role }}"
+                      >{{ user.role }}</span
+                    >
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge {% if user.is_active %}status-active{% else %}status-inactive{% endif %}"
+                    >
+                      {{ 'Active' if user.is_active else 'Inactive' }}
+                    </span>
+                  </td>
+                  <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                  <td>
+                    <button
+                      class="btn-icon"
+                      onclick="editUser({{ user.id }})"
+                      title="Edit"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                        ></path>
+                        <path
+                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button
+                      class="btn-icon btn-danger"
+                      onclick="deleteUser({{ user.id }})"
+                      title="Delete"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path
+                          d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        ></path>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="documentsTab" class="tab-content">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Filename</th>
+                  <th>Collection</th>
+                  <th>Access Level</th>
+                  <th>Uploaded By</th>
+                  <th>Uploaded At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for doc in documents %}
+                <tr>
+                  <td>{{ doc.id }}</td>
+                  <td>{{ doc.filename }}</td>
+                  <td><code>{{ doc.collection_name }}</code></td>
+                  <td>
+                    <span class="badge badge-{{ doc.access_level }}"
+                      >{{ doc.access_level }}</span
+                    >
+                  </td>
+                  <td>User #{{ doc.uploaded_by }}</td>
+                  <td>{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
     </div>
-    
+
     <!-- Add User Modal -->
     <div id="addUserModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeAddUserModal()">&times;</span>
-            <h2>Add New User</h2>
-            <form id="addUserForm">
-                <div class="form-group">
-                    <label for="newUsername">Username</label>
-                    <input type="text" id="newUsername" required>
-                </div>
-                <div class="form-group">
-                    <label for="newEmail">Email</label>
-                    <input type="email" id="newEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="newPassword">Password</label>
-                    <input type="password" id="newPassword" required>
-                </div>
-                <div class="form-group">
-                    <label for="newRole">Role</label>
-                    <select id="newRole">
-                        <option value="user">User</option>
-                        <option value="b-manager">B-Manager</option>
-                        <option value="a-manager">A-Manager</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary">Create User</button>
-            </form>
-        </div>
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeAddUserModal()">&times;</span>
+        <h2>Add New User</h2>
+        <form id="addUserForm">
+          <div class="form-group">
+            <label for="newUsername">Username</label>
+            <input type="text" id="newUsername" required />
+          </div>
+          <div class="form-group">
+            <label for="newEmail">Email</label>
+            <input type="email" id="newEmail" required />
+          </div>
+          <div class="form-group">
+            <label for="newPassword">Password</label>
+            <input type="password" id="newPassword" required />
+          </div>
+          <div class="form-group">
+            <label for="newRole">Role</label>
+            <select id="newRole">
+              <option value="user">User</option>
+              <option value="b-manager">B-Manager</option>
+              <option value="a-manager">A-Manager</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Create User</button>
+        </form>
+      </div>
     </div>
-    
+
     <!-- Edit User Modal -->
     <div id="editUserModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeEditUserModal()">&times;</span>
-            <h2>Edit User</h2>
-            <form id="editUserForm">
-                <input type="hidden" id="editUserId">
-                <div class="form-group">
-                    <label for="editRole">Role</label>
-                    <select id="editRole">
-                        <option value="user">User</option>
-                        <option value="b-manager">B-Manager</option>
-                        <option value="a-manager">A-Manager</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="editActive">
-                        Account Active
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-primary">Update User</button>
-            </form>
-        </div>
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeEditUserModal()">&times;</span>
+        <h2>Edit User</h2>
+        <form id="editUserForm">
+          <input type="hidden" id="editUserId" />
+          <div class="form-group">
+            <label for="editRole">Role</label>
+            <select id="editRole">
+              <option value="user">User</option>
+              <option value="b-manager">B-Manager</option>
+              <option value="a-manager">A-Manager</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="editActive" />
+              Account Active
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary">Update User</button>
+        </form>
+      </div>
     </div>
 
     <script>
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        function showAddUserModal() {
-            document.getElementById('addUserModal').style.display = 'flex';
-        }
-
-        function closeAddUserModal() {
-            document.getElementById('addUserModal').style.display = 'none';
-        }
-
-        function closeEditUserModal() {
-            document.getElementById('editUserModal').style.display = 'none';
-        }
-
-        // Add User
-        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const userData = {
-                username: document.getElementById('newUsername').value,
-                email: document.getElementById('newEmail').value,
-                password: document.getElementById('newPassword').value,
-                role: document.getElementById('newRole').value
-            };
-            
-            try {
-                const response = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert('User created successfully!');
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                alert('Error creating user');
-            }
+      function showTab(tabName) {
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.querySelectorAll(".tab-button").forEach((btn) => {
+          btn.classList.remove("active");
         });
 
-        // Edit User
-        function editUser(userId) {
-            const row = event.target.closest('tr');
-            const role = row.cells[3].textContent.trim();
-            const isActive = row.cells[4].textContent.trim() === 'Active';
-            
-            document.getElementById('editUserId').value = userId;
-            document.getElementById('editRole').value = role;
-            document.getElementById('editActive').checked = isActive;
-            document.getElementById('editUserModal').style.display = 'flex';
-        }
+        document.getElementById(tabName + "Tab").classList.add("active");
+        event.target.classList.add("active");
+      }
 
-        document.getElementById('editUserForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const userId = document.getElementById('editUserId').value;
-            const userData = {
-                role: document.getElementById('editRole').value,
-                is_active: document.getElementById('editActive').checked
-            };
-            
-            try {
-                const response = await fetch(`/api/users/${userId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userData)
-                });
-                
-                if (response.ok) {
-                    alert('User updated successfully!');
-                    location.reload();
-                } else {
-                    alert('Error updating user');
-                }
-            } catch (error) {
-                alert('Error updating user');
+      function showAddUserModal() {
+        document.getElementById("addUserModal").style.display = "flex";
+      }
+
+      function closeAddUserModal() {
+        document.getElementById("addUserModal").style.display = "none";
+      }
+
+      function closeEditUserModal() {
+        document.getElementById("editUserModal").style.display = "none";
+      }
+
+      // Add User
+      document
+        .getElementById("addUserForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const userData = {
+            username: document.getElementById("newUsername").value,
+            email: document.getElementById("newEmail").value,
+            password: document.getElementById("newPassword").value,
+            role: document.getElementById("newRole").value,
+          };
+
+          try {
+            const response = await fetch("/api/users", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(userData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              alert("User created successfully!");
+              location.reload();
+            } else {
+              alert("Error: " + data.error);
             }
+          } catch (error) {
+            alert("Error creating user");
+          }
         });
 
-        // Delete User
-        function deleteUser(userId) {
-            if (!confirm('Are you sure you want to delete this user?')) {
-                return;
-            }
-            
-            fetch(`/api/users/${userId}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert('User deleted successfully!');
-                    location.reload();
-                } else {
-                    alert('Error deleting user');
-                }
-            })
-            .catch(error => {
-                alert('Error deleting user');
+      // Edit User
+      function editUser(userId) {
+        const row = event.target.closest("tr");
+        const role = row.cells[3].textContent.trim();
+        const isActive = row.cells[4].textContent.trim() === "Active";
+
+        document.getElementById("editUserId").value = userId;
+        document.getElementById("editRole").value = role;
+        document.getElementById("editActive").checked = isActive;
+        document.getElementById("editUserModal").style.display = "flex";
+      }
+
+      document
+        .getElementById("editUserForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const userId = document.getElementById("editUserId").value;
+          const userData = {
+            role: document.getElementById("editRole").value,
+            is_active: document.getElementById("editActive").checked,
+          };
+
+          try {
+            const response = await fetch(`/api/users/${userId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(userData),
             });
+
+            if (response.ok) {
+              alert("User updated successfully!");
+              location.reload();
+            } else {
+              alert("Error updating user");
+            }
+          } catch (error) {
+            alert("Error updating user");
+          }
+        });
+
+      // Delete User
+      function deleteUser(userId) {
+        if (!confirm("Are you sure you want to delete this user?")) {
+          return;
         }
 
-        // Close modals on outside click
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+        fetch(`/api/users/${userId}`, {
+          method: "DELETE",
+        })
+          .then((response) => {
+            if (response.ok) {
+              alert("User deleted successfully!");
+              location.reload();
+            } else {
+              alert("Error deleting user");
             }
+          })
+          .catch((error) => {
+            alert("Error deleting user");
+          });
+      }
+
+      // Close modals on outside click
+      window.onclick = function (event) {
+        if (event.target.classList.contains("modal")) {
+          event.target.style.display = "none";
         }
+      };
     </script>
-</body>
+  </body>
 </html>

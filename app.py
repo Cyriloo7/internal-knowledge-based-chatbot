@@ -32,9 +32,27 @@ class Document(db.Model):
     uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Conversation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    collection_name = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'collection_name': self.collection_name,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
 class ChatHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=True)
     message = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -55,7 +73,6 @@ ROLE_MAX_LEVEL = {
     "admin": 4
 }
 
-
 # Collection levels (ordered)
 COLLECTION_LEVELS = [
     "level-1",
@@ -70,7 +87,6 @@ def get_allowed_collections(role):
 
 def get_level_number(collection_name):
     return int(collection_name.split("-")[-1])
-
 
 # Decorators
 def login_required(f):
@@ -89,7 +105,6 @@ def login_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
-
 
 def role_required(min_role):
     def decorator(f):
@@ -146,16 +161,34 @@ def dashboard():
 def chat():
     user = User.query.get(session['user_id'])
     allowed_collections = get_allowed_collections(user.role)
+    conversation_id = request.args.get('conversation_id', type=int)
 
     documents = Document.query.filter(
         Document.collection_name.in_(allowed_collections)
     ).all()
+    
+    conversations = Conversation.query.filter_by(user_id=user.id).order_by(
+        Conversation.updated_at.desc()
+    ).all()
+    
+    current_conversation = None
+    if conversation_id:
+        current_conversation = Conversation.query.filter_by(
+            id=conversation_id,
+            user_id=user.id
+        ).first()
+    
+    if not current_conversation and conversations:
+        current_conversation = conversations[0]
+        conversation_id = current_conversation.id
 
     return render_template(
         'chat.html',
         user=user,
         documents=documents,
-        collections=allowed_collections
+        collections=allowed_collections,
+        conversations=conversations,
+        current_conversation_id=conversation_id
     )
 
 @app.route('/upload')
@@ -175,8 +208,6 @@ def upload_documents():
         collections=allowed_collections
     )
 
-
-
 @app.route('/admin')
 @role_required('admin')
 def admin_panel():
@@ -190,34 +221,82 @@ def chat_message():
     data = request.get_json()
     message = data.get('message')
     collection_name = data.get('collection')
+    conversation_id = data.get('conversation_id')
+    is_first_message = data.get('is_first_message', False)
 
     user = User.query.get(session['user_id'])
 
     if collection_name not in get_allowed_collections(user.role):
         return jsonify({'error': 'Access denied'}), 403
 
+    # Get or create conversation
+    conversation = None
+    if conversation_id:
+        conversation = Conversation.query.filter_by(
+            id=conversation_id,
+            user_id=user.id
+        ).first()
+    
+    if not conversation:
+        # Create title from first message (max 50 chars)
+        title = message[:50] + "..." if len(message) > 50 else message
+        conversation = Conversation(
+            user_id=user.id,
+            title=title,
+            collection_name=collection_name
+        )
+        db.session.add(conversation)
+        db.session.commit()
+
     retriever = Retriever(collection_name=collection_name)
     vectorstore = retriever.get_vector_store()
-    agent = RAG_Agent(vector_store=vectorstore)
+    
+    # Use conversation-specific thread_id
+    thread_id = f"conversation_{conversation.id}"
+    agent = RAG_Agent(vector_store=vectorstore, thread_id=thread_id)
 
-    from langchain_core.messages import HumanMessage
+    from langchain_core.messages import HumanMessage, AIMessage
+    
+    # Load previous conversation history for context (last 10 exchanges)
+    previous_messages = []
+    chat_history = ChatHistory.query.filter_by(
+        conversation_id=conversation.id
+    ).order_by(ChatHistory.timestamp.desc()).limit(20).all()
+    
+    # Reverse to get chronological order
+    chat_history.reverse()
+    
+    for history_item in chat_history:
+        previous_messages.append(HumanMessage(content=history_item.message))
+        previous_messages.append(AIMessage(content=history_item.response))
+    
+    # Add current message
+    previous_messages.append(HumanMessage(content=message))
+    
     result = agent.langgraph_graph().invoke(
-        {"messages": [HumanMessage(content=message)]},
+        {"messages": previous_messages},
         config=agent.config
     )
 
     response = result['messages'][-1].text
 
+    # Save chat history
     db.session.add(ChatHistory(
         user_id=user.id,
+        conversation_id=conversation.id,
         message=message,
         response=response,
         collection_name=collection_name
     ))
+    
+    # Update conversation timestamp
+    conversation.updated_at = datetime.utcnow()
     db.session.commit()
 
-    return jsonify({'response': response})
-
+    return jsonify({
+        'response': response,
+        'conversation_id': conversation.id
+    })
 
 @app.route('/api/upload', methods=['POST'])
 @role_required('b-manager')
@@ -229,6 +308,12 @@ def upload_document():
         if not file or file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
 
+        # Validate file extension
+        allowed_extensions = {'.pdf', '.docx', '.doc', '.ppt', '.pptx', '.txt'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            return jsonify({'error': f'Unsupported file format. Allowed formats: {", ".join(allowed_extensions)}'}), 400
+
         if collection_name not in COLLECTION_LEVELS:
             return jsonify({'error': 'Invalid collection level'}), 400
 
@@ -237,18 +322,17 @@ def upload_document():
         if get_level_number(collection_name) > ROLE_MAX_LEVEL[user_role]:
             return jsonify({'error': 'Cannot upload to higher level'}), 403
 
-        # ✅ Create level-specific upload directory
+        # Create level-specific upload directory
         base_upload_folder = 'uploads'
         level_folder = os.path.join(base_upload_folder, collection_name)
         os.makedirs(level_folder, exist_ok=True)
 
-        # Optional: secure filename
         filename = file.filename
         filepath = os.path.join(level_folder, filename)
 
         file.save(filepath)
 
-        # Index document (pass full path)
+        # Index document
         indexer = Indexer(filepath)
         indexer.index_document(level=collection_name)
 
@@ -266,15 +350,12 @@ def upload_document():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    
-
 @app.route('/api/users', methods=['GET', 'POST'])
 @role_required('admin')
 def manage_users():
     if request.method == 'POST':
         data = request.get_json()
         
-        # Check if user exists
         if User.query.filter_by(username=data['username']).first():
             return jsonify({'error': 'Username already exists'}), 400
         
@@ -324,9 +405,28 @@ def manage_user(user_id):
 @app.route('/api/chat-history')
 @login_required
 def get_chat_history():
-    history = ChatHistory.query.filter_by(user_id=session['user_id']).order_by(
-        ChatHistory.timestamp.desc()
-    ).limit(50).all()
+    conversation_id = request.args.get('conversation_id', type=int)
+    user_id = session['user_id']
+    
+    if conversation_id:
+        # Verify conversation belongs to user
+        conversation = Conversation.query.filter_by(
+            id=conversation_id,
+            user_id=user_id
+        ).first()
+        if not conversation:
+            return jsonify({'error': 'Conversation not found'}), 404
+        
+        history = ChatHistory.query.filter_by(
+            conversation_id=conversation_id
+        ).order_by(ChatHistory.timestamp.asc()).limit(100).all()
+    else:
+        # Fallback to old behavior for backward compatibility
+        collection_name = request.args.get('collection', None)
+        query = ChatHistory.query.filter_by(user_id=user_id)
+        if collection_name:
+            query = query.filter_by(collection_name=collection_name)
+        history = query.order_by(ChatHistory.timestamp.asc()).limit(50).all()
     
     return jsonify([{
         'message': h.message,
@@ -335,22 +435,82 @@ def get_chat_history():
         'collection': h.collection_name
     } for h in history])
 
-# Initialize database and create default admin
+@app.route('/api/conversations', methods=['GET', 'POST'])
+@login_required
+def manage_conversations():
+    user_id = session['user_id']
+    
+    if request.method == 'POST':
+        # Create new conversation
+        data = request.get_json()
+        title = data.get('title', 'New Conversation')
+        collection_name = data.get('collection_name', 'level-1')
+        
+        conversation = Conversation(
+            user_id=user_id,
+            title=title,
+            collection_name=collection_name
+        )
+        db.session.add(conversation)
+        db.session.commit()
+        
+        return jsonify(conversation.to_dict()), 201
+    
+    # GET: List all conversations
+    conversations = Conversation.query.filter_by(user_id=user_id).order_by(
+        Conversation.updated_at.desc()
+    ).all()
+    
+    return jsonify([c.to_dict() for c in conversations])
+
+@app.route('/api/conversations/<int:conversation_id>', methods=['PUT', 'DELETE'])
+@login_required
+def manage_conversation(conversation_id):
+    user_id = session['user_id']
+    conversation = Conversation.query.filter_by(
+        id=conversation_id,
+        user_id=user_id
+    ).first_or_404()
+    
+    if request.method == 'PUT':
+        # Update conversation title
+        data = request.get_json()
+        if 'title' in data:
+            new_title = data['title'].strip()
+            if new_title:
+                conversation.title = new_title
+                db.session.commit()
+        return jsonify(conversation.to_dict())
+    
+    elif request.method == 'DELETE':
+        # Delete conversation and its messages
+        ChatHistory.query.filter_by(conversation_id=conversation_id).delete()
+        db.session.delete(conversation)
+        db.session.commit()
+        return jsonify({'success': True})
+
+# Initialize database and create default users
 def init_db():
     with app.app_context():
         db.create_all()
         
-        # Create default admin if not exists
-        if not User.query.filter_by(username='admin').first():
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                password=generate_password_hash('admin123'),
-                role='admin'
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("Default admin created - username: admin, password: admin123")
+        # Create default users if they don't exist
+        default_users = [
+            {'username': 'admin', 'email': 'admin@example.com', 'password': 'admin123', 'role': 'admin'}
+        ]
+        
+        for user_data in default_users:
+            if not User.query.filter_by(username=user_data['username']).first():
+                user = User(
+                    username=user_data['username'],
+                    email=user_data['email'],
+                    password=generate_password_hash(user_data['password']),
+                    role=user_data['role']
+                )
+                db.session.add(user)
+        
+        db.session.commit()
+        print("Database initialized with default users")
 
 if __name__ == '__main__':
     init_db()

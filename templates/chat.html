@@ -49,7 +49,7 @@
             </a>
           </li>
           <li class="active">
-            <a href="/chat" onclick="showUploadModal(); return false;">
+            <a href="/chat">
               <svg
                 width="20"
                 height="20"
@@ -67,7 +67,7 @@
           </li>
           {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
           <li>
-            <a href="#" onclick="showUploadModal()">
+            <a href="#" onclick="showUploadModal(); return false;">
               <svg
                 width="20"
                 height="20"
@@ -114,9 +114,42 @@
         </div>
       </nav>
 
+      <!-- Conversations Sidebar -->
+      <aside class="conversations-sidebar" id="conversationsSidebar">
+        <div class="conversations-header">
+          <h3>Conversations</h3>
+          <button
+            class="btn-new-conversation"
+            id="newConversationBtn"
+            title="New Conversation"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="conversations-list" id="conversationsList">
+          <!-- Conversations will be loaded here -->
+        </div>
+      </aside>
+
       <main class="chat-container">
         <div class="chat-header">
-          <h1>Document Q&A</h1>
+          <div>
+            <h1>Document Q&A</h1>
+            <div class="status-badge-small" id="connectionStatus">
+              <span class="status-dot status-online"></span>
+              <span>Ready</span>
+            </div>
+          </div>
           <div class="collection-selector">
             <label for="collection">Collection:</label>
             <select id="collection">
@@ -130,27 +163,30 @@
         </div>
 
         <div class="chat-messages" id="chatMessages">
-          <div class="message-system">
-            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-              <rect width="60" height="60" rx="12" fill="#EEF2FF" />
-              <path
-                d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
-                stroke="#4F46E5"
-                stroke-width="3"
-                fill="none"
-              />
-              <circle cx="30" cy="30" r="8" fill="#4F46E5" />
-            </svg>
-            <div>
-              <p><strong>Welcome to RAG Assistant!</strong></p>
-              <p>
-                I can help you find information from your indexed documents. Ask
-                me anything about the documents you have access to.
-              </p>
-              <p class="help-text">
-                Try asking: "What are the main topics in the document?" or
-                "Summarize the key findings."
-              </p>
+          <div id="historySection"></div>
+          <div id="newSection">
+            <div class="message-system" id="welcomeMessage">
+              <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+                <rect width="60" height="60" rx="12" fill="#EEF2FF" />
+                <path
+                  d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                  stroke="#4F46E5"
+                  stroke-width="3"
+                  fill="none"
+                />
+                <circle cx="30" cy="30" r="8" fill="#4F46E5" />
+              </svg>
+              <div>
+                <p><strong>Welcome to RAG Assistant!</strong></p>
+                <p>
+                  I can help you find information from your indexed documents.
+                  Ask me anything about the documents you have access to.
+                </p>
+                <p class="help-text">
+                  Try asking: "What are the main topics in the document?" or
+                  "Summarize the key findings."
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -189,14 +225,24 @@
         <h2>Upload Document</h2>
         <form id="uploadForm" enctype="multipart/form-data">
           <div class="form-group">
-            <label for="pdfFile">Select PDF File</label>
+            <label for="pdfFile">Select Document (PDF, DOCX, PPT, TXT)</label>
             <input
               type="file"
               id="pdfFile"
               name="file"
-              accept=".pdf"
+              accept=".pdf,.docx,.doc,.ppt,.pptx,.txt"
               required
             />
+            <small
+              style="
+                color: var(--text-light);
+                font-size: 13px;
+                margin-top: 4px;
+                display: block;
+              "
+            >
+              Supported formats: PDF, DOCX, PPT, PPTX, TXT
+            </small>
           </div>
           <div class="form-group">
             <label for="collectionName">Collection Name</label>
@@ -212,22 +258,23 @@
               {% endif %}
             </select>
           </div>
-          <!-- <div class="form-group">
-            <label for="accessLevel">Access Level</label>
-            <select id="accessLevel" name="access_level">
-              <option value="user">User</option>
-              <option value="b-manager">B-Manager</option>
-              <option value="a-manager">A-Manager</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div> -->
           <div id="uploadProgress" style="display: none">
+            <div class="status-indicator">
+              <div class="status-icon" id="statusIcon">
+                <div class="spinner-small"></div>
+              </div>
+              <div class="status-text">
+                <p id="uploadStatus" class="status-message">Processing...</p>
+                <p id="uploadDetails" class="status-details"></p>
+              </div>
+            </div>
             <div class="progress-bar">
               <div class="progress-fill" id="progressFill"></div>
             </div>
-            <p id="uploadStatus">Uploading and indexing...</p>
           </div>
-          <button type="submit" class="btn btn-primary">Upload & Index</button>
+          <button type="submit" class="btn btn-primary" id="uploadButton">
+            Upload & Index
+          </button>
         </form>
       </div>
     </div>
@@ -239,42 +286,215 @@
       const messageInput = document.getElementById('messageInput');
       const sendButton = document.getElementById('sendButton');
       const collectionSelect = document.getElementById('collection');
+      const conversationsList = document.getElementById('conversationsList');
+      const newConversationBtn = document.getElementById('newConversationBtn');
 
-      // Auto-resize textarea
-      messageInput.addEventListener('input', function() {
-          this.style.height = 'auto';
-          this.style.height = (this.scrollHeight) + 'px';
-      });
+      let currentConversationId = {% if current_conversation_id %}{{ current_conversation_id }}{% else %}null{% endif %};
+      let isFirstMessage = !currentConversationId;
 
-      // Handle Enter key (Shift+Enter for new line)
-      messageInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              chatForm.dispatchEvent(new Event('submit'));
+      // Load conversations list
+      async function loadConversations() {
+          try {
+              const response = await fetch('/api/conversations');
+              const conversations = await response.json();
+
+              conversationsList.innerHTML = '';
+
+              conversations.forEach(conv => {
+                  const convItem = document.createElement('div');
+                  convItem.className = `conversation-item ${conv.id === currentConversationId ? 'active' : ''}`;
+                  convItem.dataset.conversationId = conv.id;
+                  convItem.innerHTML = `
+                      <div class="conversation-content">
+                          <div class="conversation-title" data-conversation-id="${conv.id}">${escapeHtml(conv.title)}</div>
+                          <div class="conversation-meta">${new Date(conv.updated_at).toLocaleDateString()}</div>
+                      </div>
+                      <div class="conversation-actions">
+                          <button class="conversation-rename" onclick="event.stopPropagation(); startRename(${conv.id}, '${escapeHtml(conv.title)}')" title="Rename">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                              </svg>
+                          </button>
+                          <button class="conversation-delete" onclick="event.stopPropagation(); deleteConversation(${conv.id})" title="Delete">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                          </button>
+                      </div>
+                  `;
+
+                  // Click to navigate
+                  convItem.addEventListener('click', (e) => {
+                      if (!e.target.closest('.conversation-actions')) {
+                          window.location.href = `/chat?conversation_id=${conv.id}`;
+                      }
+                  });
+
+                  // Double-click title to rename
+                  const titleEl = convItem.querySelector('.conversation-title');
+                  titleEl.addEventListener('dblclick', (e) => {
+                      e.stopPropagation();
+                      startRename(conv.id, conv.title);
+                  });
+
+                  conversationsList.appendChild(convItem);
+              });
+          } catch (error) {
+              console.error('Failed to load conversations:', error);
           }
-      });
+      }
 
-      function copyAssistantMessage(button) {
-          const messageContent = button
-              .closest('.message-content')
-              .querySelector('.assistant-text');
+      // Rename conversation
+      function startRename(conversationId, currentTitle) {
+          const titleElement = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+          if (!titleElement) return;
 
-          const text = messageContent.innerText;
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'conversation-title-input';
+          input.value = currentTitle;
 
-          navigator.clipboard.writeText(text).then(() => {
-              const original = button.innerText;
-              button.innerText = '✅';
-              setTimeout(() => {
-                  button.innerText = original;
-              }, 1200);
-          }).catch(() => {
-              alert('Failed to copy');
+          titleElement.replaceWith(input);
+          input.focus();
+          input.select();
+
+          async function finishRename() {
+              const newTitle = input.value.trim();
+              if (newTitle && newTitle !== currentTitle) {
+                  try {
+                      const response = await fetch(`/api/conversations/${conversationId}`, {
+                          method: 'PUT',
+                          headers: {
+                              'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ title: newTitle })
+                      });
+
+                      if (response.ok) {
+                          loadConversations();
+                      }
+                  } catch (error) {
+                      console.error('Failed to rename conversation:', error);
+                  }
+              } else {
+                  loadConversations();
+              }
+          }
+
+          input.addEventListener('blur', finishRename);
+          input.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                  e.preventDefault();
+                  input.blur();
+              } else if (e.key === 'Escape') {
+                  loadConversations();
+              }
           });
       }
 
+      // Create new conversation
+      async function createNewConversation() {
+          isFirstMessage = true;
+          currentConversationId = null;
 
-      // Add message to chat
-      function addMessage(content, isUser = false) {
+          // Clear the chat
+          const newSection = document.getElementById('newSection');
+          const welcomeMessage = document.getElementById('welcomeMessage');
+          const existingMessages = newSection.querySelectorAll('.message, .conversation-separator');
+          existingMessages.forEach(msg => {
+              if (msg.id !== 'welcomeMessage') msg.remove();
+          });
+          if (welcomeMessage) {
+              welcomeMessage.style.display = 'flex';
+          }
+
+          // Clear history section
+          document.getElementById('historySection').innerHTML = '';
+
+          // Update URL
+          window.history.pushState({}, '', '/chat');
+
+          // Reload conversations
+          loadConversations();
+      }
+
+      // Delete conversation
+      async function deleteConversation(conversationId) {
+          if (!confirm('Are you sure you want to delete this conversation?')) {
+              return;
+          }
+
+          try {
+              const response = await fetch(`/api/conversations/${conversationId}`, {
+                  method: 'DELETE'
+              });
+
+              if (response.ok) {
+                  if (currentConversationId === conversationId) {
+                      window.location.href = '/chat';
+                  } else {
+                      loadConversations();
+                  }
+              }
+          } catch (error) {
+              console.error('Failed to delete conversation:', error);
+              alert('Failed to delete conversation');
+          }
+      }
+
+      // Load conversation history on page load
+      async function loadChatHistory() {
+          const historySection = document.getElementById('historySection');
+          const newSection = document.getElementById('newSection');
+          const welcomeMessage = document.getElementById('welcomeMessage');
+
+          try {
+              const url = currentConversationId
+                  ? `/api/chat-history?conversation_id=${currentConversationId}`
+                  : `/api/chat-history?collection=${collectionSelect.value}`;
+
+              const response = await fetch(url);
+              const history = await response.json();
+
+              historySection.innerHTML = '';
+
+              if (history.length > 0) {
+                  const separator = document.createElement('div');
+                  separator.className = 'conversation-separator';
+                  separator.innerHTML = `
+                      <div class="separator-line"></div>
+                      <div class="separator-text">Previous Conversation</div>
+                      <div class="separator-line"></div>
+                  `;
+                  historySection.appendChild(separator);
+
+                  history.forEach(item => {
+                      addMessageToSection(item.message, true, historySection);
+                      addMessageToSection(item.response, false, historySection);
+                  });
+
+                  if (welcomeMessage) {
+                      welcomeMessage.style.display = 'none';
+                  }
+
+                  isFirstMessage = false;
+              } else {
+                  if (welcomeMessage) {
+                      welcomeMessage.style.display = 'flex';
+                  }
+                  isFirstMessage = true;
+              }
+
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+          } catch (error) {
+              console.error('Failed to load chat history:', error);
+          }
+      }
+
+      // Add message to specific section
+      function addMessageToSection(content, isUser = false, section) {
           const messageDiv = document.createElement('div');
           messageDiv.className = `message ${isUser ? 'message-user' : 'message-assistant'}`;
 
@@ -300,12 +520,91 @@
               `;
           }
 
+          section.appendChild(messageDiv);
+      }
 
-          chatMessages.appendChild(messageDiv);
+      collectionSelect.addEventListener('change', () => {
+          const newSection = document.getElementById('newSection');
+          const welcomeMessage = document.getElementById('welcomeMessage');
+          const existingMessages = newSection.querySelectorAll('.message, .conversation-separator');
+          existingMessages.forEach(msg => {
+              if (msg.id !== 'welcomeMessage') msg.remove();
+          });
+          if (welcomeMessage) {
+              welcomeMessage.style.display = 'flex';
+          }
+          loadChatHistory();
+      });
+
+      if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', loadChatHistory);
+      } else {
+          loadChatHistory();
+      }
+
+      messageInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+      });
+
+      messageInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              chatForm.dispatchEvent(new Event('submit'));
+          }
+      });
+
+      function addMessage(content, isUser = false) {
+          const newSection = document.getElementById('newSection');
+          const welcomeMessage = document.getElementById('welcomeMessage');
+
+          if (welcomeMessage && welcomeMessage.style.display !== 'none') {
+              welcomeMessage.style.display = 'none';
+          }
+
+          if (newSection.querySelectorAll('.message').length === 0 &&
+              document.getElementById('historySection').querySelectorAll('.message').length > 0) {
+              const separator = document.createElement('div');
+              separator.className = 'conversation-separator';
+              separator.innerHTML = `
+                  <div class="separator-line"></div>
+                  <div class="separator-text">New Conversation</div>
+                  <div class="separator-line"></div>
+              `;
+              newSection.appendChild(separator);
+          }
+
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message ${isUser ? 'message-user' : 'message-assistant'}`;
+
+          if (isUser) {
+              messageDiv.innerHTML = `
+                  <div class="avatar-small">{{ user.username[0].upper() }}</div>
+                  <div class="message-content">${escapeHtml(content)}</div>
+              `;
+          } else {
+              messageDiv.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
+                    <rect width="60" height="60" rx="12" fill="#EEF2FF"/>
+                    <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                          stroke="#4F46E5" stroke-width="3" fill="none"/>
+                    <circle cx="30" cy="30" r="8" fill="#4F46E5"/>
+                </svg>
+                <div class="message-content markdown-content">
+                    <button class="copy-btn" title="Copy response">📋</button>
+                    <div class="assistant-text">
+                        ${formatResponse(content)}
+                    </div>
+                </div>
+              `;
+          }
+
+          newSection.appendChild(messageDiv);
           chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
       function addLoadingMessage() {
+          const newSection = document.getElementById('newSection');
           const loadingDiv = document.createElement('div');
           loadingDiv.className = 'message message-assistant message-loading';
           loadingDiv.id = 'loadingMessage';
@@ -321,7 +620,7 @@
                   </div>
               </div>
           `;
-          chatMessages.appendChild(loadingDiv);
+          newSection.appendChild(loadingDiv);
           chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
@@ -331,20 +630,37 @@
       }
 
       function formatResponse(text) {
-          // Convert Markdown → HTML
           const html = marked.parse(text, {
               breaks: true,
               gfm: true
           });
-
           return html;
       }
-
 
       function escapeHtml(text) {
           const div = document.createElement('div');
           div.textContent = text;
           return div.innerHTML;
+      }
+
+      function updateConnectionStatus(status) {
+          const statusEl = document.getElementById('connectionStatus');
+          const dot = statusEl.querySelector('.status-dot');
+          const text = statusEl.querySelector('span:last-child');
+
+          statusEl.className = 'status-badge-small';
+          dot.className = 'status-dot';
+
+          if (status === 'ready') {
+              dot.classList.add('status-online');
+              text.textContent = 'Ready';
+          } else if (status === 'processing') {
+              dot.classList.add('status-processing');
+              text.textContent = 'Processing...';
+          } else if (status === 'error') {
+              dot.classList.add('status-error');
+              text.textContent = 'Error';
+          }
       }
 
       // Handle form submission
@@ -356,14 +672,13 @@
 
           const collection = collectionSelect.value;
 
-          // Add user message
           addMessage(message, true);
           messageInput.value = '';
           messageInput.style.height = 'auto';
 
-          // Show loading
           addLoadingMessage();
           sendButton.disabled = true;
+          updateConnectionStatus('processing');
 
           try {
               const response = await fetch('/api/chat', {
@@ -373,29 +688,45 @@
                   },
                   body: JSON.stringify({
                       message: message,
-                      collection: collection
+                      collection: collection,
+                      conversation_id: currentConversationId,
+                      is_first_message: isFirstMessage
                   })
               });
 
               const data = await response.json();
 
               removeLoadingMessage();
+              updateConnectionStatus('ready');
 
               if (response.ok) {
                   addMessage(data.response);
+
+                  if (data.conversation_id && !currentConversationId) {
+                      currentConversationId = data.conversation_id;
+                      isFirstMessage = false;
+                      window.history.pushState({}, '', `/chat?conversation_id=${data.conversation_id}`);
+                      loadConversations();
+                  }
               } else {
                   addMessage(`Error: ${data.error || 'Failed to get response'}`, false);
+                  updateConnectionStatus('error');
+                  setTimeout(() => updateConnectionStatus('ready'), 3000);
               }
           } catch (error) {
               removeLoadingMessage();
               addMessage('Error: Unable to connect to the server', false);
+              updateConnectionStatus('error');
+              setTimeout(() => updateConnectionStatus('ready'), 3000);
           } finally {
               sendButton.disabled = false;
               messageInput.focus();
           }
       });
 
-      // Upload Modal Functions
+      newConversationBtn.addEventListener('click', createNewConversation);
+      loadConversations();
+
       function showUploadModal() {
           document.getElementById('uploadModal').style.display = 'flex';
       }
@@ -404,7 +735,6 @@
           document.getElementById('uploadModal').style.display = 'none';
       }
 
-      // Handle upload
       {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
       document.getElementById('uploadForm').addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -412,10 +742,22 @@
           const formData = new FormData(e.target);
           const uploadProgress = document.getElementById('uploadProgress');
           const uploadStatus = document.getElementById('uploadStatus');
+          const uploadDetails = document.getElementById('uploadDetails');
+          const uploadButton = document.getElementById('uploadButton');
+          const statusIcon = document.getElementById('statusIcon');
 
           uploadProgress.style.display = 'block';
+          uploadButton.disabled = true;
+          uploadButton.textContent = 'Processing...';
+
+          uploadStatus.textContent = 'Processing file...';
+          uploadDetails.textContent = 'Validating file format and preparing for upload';
+          statusIcon.innerHTML = '<div class="spinner-small"></div>';
 
           try {
+              uploadStatus.textContent = 'Uploading file...';
+              uploadDetails.textContent = 'Transferring file to server';
+
               const response = await fetch('/api/upload', {
                   method: 'POST',
                   body: formData
@@ -424,20 +766,36 @@
               const data = await response.json();
 
               if (response.ok) {
-                  uploadStatus.textContent = 'Upload successful! Refreshing...';
+                  uploadStatus.textContent = 'Indexing document...';
+                  uploadDetails.textContent = 'Extracting text, processing images, and creating embeddings';
+
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+
+                  uploadStatus.textContent = 'Upload successful!';
+                  uploadDetails.textContent = 'Document indexed and ready for queries';
+                  statusIcon.innerHTML = '✅';
+                  uploadButton.textContent = 'Complete';
+
                   setTimeout(() => {
                       location.reload();
-                  }, 1500);
+                  }, 2000);
               } else {
                   uploadStatus.textContent = `Error: ${data.error}`;
+                  uploadDetails.textContent = 'Please try again or contact support';
+                  statusIcon.innerHTML = '❌';
+                  uploadButton.disabled = false;
+                  uploadButton.textContent = 'Upload & Index';
               }
           } catch (error) {
               uploadStatus.textContent = 'Error: Upload failed';
+              uploadDetails.textContent = error.message || 'Network error. Please check your connection.';
+              statusIcon.innerHTML = '❌';
+              uploadButton.disabled = false;
+              uploadButton.textContent = 'Upload & Index';
           }
       });
       {% endif %}
 
-      // Close modal on outside click
       window.onclick = function(event) {
           const modal = document.getElementById('uploadModal');
           if (event.target == modal) {
@@ -448,12 +806,9 @@
       function fallbackCopyText(text) {
           const textarea = document.createElement('textarea');
           textarea.value = text;
-
-          // Prevent scrolling to bottom
           textarea.style.position = 'fixed';
           textarea.style.top = '0';
           textarea.style.left = '0';
-
           document.body.appendChild(textarea);
           textarea.focus();
           textarea.select();
@@ -466,7 +821,7 @@
 
           document.body.removeChild(textarea);
       }
-      // Copy assistant message (safe + fallback)
+
       chatMessages.addEventListener('click', async (e) => {
           const copyBtn = e.target.closest('.copy-btn');
           if (!copyBtn) return;
@@ -482,7 +837,6 @@
           try {
               await navigator.clipboard.writeText(textToCopy);
           } catch (err) {
-              // Fallback for blocked clipboard API
               fallbackCopyText(textToCopy);
           }
 

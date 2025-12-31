@@ -1,196 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - RAG Chatbot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
     <div class="app-container">
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-small">
-                    <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-                        <rect width="60" height="60" rx="12" fill="#4F46E5"/>
-                        <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z" stroke="white" stroke-width="3" fill="none"/>
-                        <circle cx="30" cy="30" r="8" fill="white"/>
-                    </svg>
-                </div>
-                <h2>RAG Assistant</h2>
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-small">
+            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
+              <rect width="60" height="60" rx="12" fill="#4F46E5" />
+              <path
+                d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                stroke="white"
+                stroke-width="3"
+                fill="none"
+              />
+              <circle cx="30" cy="30" r="8" fill="white" />
+            </svg>
+          </div>
+          <h2>RAG Assistant</h2>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="active">
+            <a href="/dashboard">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/chat">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                ></path>
+              </svg>
+              Chat
+            </a>
+          </li>
+          {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+          <li>
+            <a href="/upload">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              Upload Documents
+            </a>
+          </li>
+          {% endif %} {% if user.role == 'admin' %}
+          <li>
+            <a href="/admin">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+              </svg>
+              Admin Panel
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="avatar">{{ user.username[0].upper() }}</div>
+            <div>
+              <div class="user-name">{{ user.username }}</div>
+              <div class="user-role">{{ user.role }}</div>
             </div>
-            
-            <ul class="nav-menu">
-                <li class="active">
-                    <a href="/dashboard">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-                <li>
-                    <a href="/chat">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        Chat
-                    </a>
-                </li>
-                {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
-                <li>
-                    <a href="/upload">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        Upload Documents
-                    </a>
-                </li>
-                {% endif %}
-                {% if user.role == 'admin' %}
-                <li>
-                    <a href="/admin">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-                        </svg>
-                        Admin Panel
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-            
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="avatar">{{ user.username[0].upper() }}</div>
-                    <div>
-                        <div class="user-name">{{ user.username }}</div>
-                        <div class="user-role">{{ user.role }}</div>
-                    </div>
-                </div>
-                <a href="/logout" class="btn-logout">Logout</a>
+          </div>
+          <a href="/logout" class="btn-logout">Logout</a>
+        </div>
+      </nav>
+
+      <main class="main-content">
+        <div class="page-header">
+          <h1>Welcome, {{ user.username }}!</h1>
+          <p>
+            Your role:
+            <span class="badge badge-{{ user.role }}">{{ user.role }}</span>
+          </p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-icon" style="background: #eef2ff">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#4F46E5"
+                stroke-width="2"
+              >
+                <path
+                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                ></path>
+              </svg>
             </div>
-        </nav>
-        
-        <main class="main-content">
-            <div class="page-header">
-                <h1>Welcome, {{ user.username }}!</h1>
-                <p>Your role: <span class="badge badge-{{ user.role }}">{{ user.role }}</span></p>
+            <div class="card-content">
+              <h3>Start Chatting</h3>
+              <p>Ask questions about your documents with AI-powered search</p>
+              <a href="/chat" class="btn btn-primary">Go to Chat</a>
             </div>
-            
-            <div class="dashboard-grid">
-                <div class="card">
-                    <div class="card-icon" style="background: #EEF2FF;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>Start Chatting</h3>
-                        <p>Ask questions about your documents with AI-powered search</p>
-                        <a href="/chat" class="btn btn-primary">Go to Chat</a>
-                    </div>
-                </div>
-                
-                {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
-                <div class="card">
-                    <div class="card-icon" style="background: #F0FDF4;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>Upload Documents</h3>
-                        <p>Index new PDF documents for intelligent search</p>
-                        <a href="/chat" class="btn btn-secondary">Upload Now</a>
-                    </div>
-                </div>
-                {% endif %}
-                
-                {% if user.role == 'admin' %}
-                <div class="card">
-                    <div class="card-icon" style="background: #FEF2F2;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>Manage Users</h3>
-                        <p>Add, edit, and manage user accounts and permissions</p>
-                        <a href="/admin" class="btn btn-secondary">Admin Panel</a>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <div class="card">
-                    <div class="card-icon" style="background: #FFF7ED;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
-                    </div>
-                    <div class="card-content">
-                        <h3>How It Works</h3>
-                        <p>Learn about RAG technology and how to use the system</p>
-                        <button class="btn btn-secondary" onclick="showHelp()">Learn More</button>
-                    </div>
-                </div>
+          </div>
+
+          {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+          <div class="card">
+            <div class="card-icon" style="background: #f0fdf4">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#16A34A"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
             </div>
-            
-            <div class="info-section">
-                <h2>Access Levels</h2>
-                <div class="access-grid">
-                    <div class="access-card {% if user.role == 'user' %}active{% endif %}">
-                        <div class="access-header">User</div>
-                        <ul>
-                            <li>View and search basic documents</li>
-                            <li>Chat with AI assistant</li>
-                            <li>Access personal chat history</li>
-                        </ul>
-                    </div>
-                    <div class="access-card {% if user.role == 'b-manager' %}active{% endif %}">
-                        <div class="access-header">B-Manager</div>
-                        <ul>
-                            <li>All User permissions</li>
-                            <li>Upload new documents</li>
-                            <li>Access B-level documents</li>
-                        </ul>
-                    </div>
-                    <div class="access-card {% if user.role == 'a-manager' %}active{% endif %}">
-                        <div class="access-header">A-Manager</div>
-                        <ul>
-                            <li>All B-Manager permissions</li>
-                            <li>Access A-level documents</li>
-                            <li>View team analytics</li>
-                        </ul>
-                    </div>
-                    <div class="access-card {% if user.role == 'admin' %}active{% endif %}">
-                        <div class="access-header">Admin</div>
-                        <ul>
-                            <li>Full system access</li>
-                            <li>Manage all users</li>
-                            <li>Configure system settings</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="card-content">
+              <h3>Upload Documents</h3>
+              <p>Index new PDF documents for intelligent search</p>
+              <a href="/chat" class="btn btn-secondary">Upload Now</a>
             </div>
-        </main>
+          </div>
+          {% endif %} {% if user.role == 'admin' %}
+          <div class="card">
+            <div class="card-icon" style="background: #fef2f2">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#DC2626"
+                stroke-width="2"
+              >
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>Manage Users</h3>
+              <p>Add, edit, and manage user accounts and permissions</p>
+              <a href="/admin" class="btn btn-secondary">Admin Panel</a>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="card">
+            <div class="card-icon" style="background: #fff7ed">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#EA580C"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>How It Works</h3>
+              <p>Learn about RAG technology and how to use the system</p>
+              <button class="btn btn-secondary" onclick="showHelp()">
+                Learn More
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h2>Access Levels</h2>
+          <div class="access-grid">
+            <div
+              class="access-card {% if user.role == 'user' %}active{% endif %}"
+            >
+              <div class="access-header">User</div>
+              <ul>
+                <li>View and search basic documents</li>
+                <li>Chat with AI assistant</li>
+                <li>Access personal chat history</li>
+              </ul>
+            </div>
+            <div
+              class="access-card {% if user.role == 'b-manager' %}active{% endif %}"
+            >
+              <div class="access-header">B-Manager</div>
+              <ul>
+                <li>All User permissions</li>
+                <li>Upload new documents</li>
+                <li>Access B-level documents</li>
+              </ul>
+            </div>
+            <div
+              class="access-card {% if user.role == 'a-manager' %}active{% endif %}"
+            >
+              <div class="access-header">A-Manager</div>
+              <ul>
+                <li>All B-Manager permissions</li>
+                <li>Access A-level documents</li>
+                <li>View team analytics</li>
+              </ul>
+            </div>
+            <div
+              class="access-card {% if user.role == 'admin' %}active{% endif %}"
+            >
+              <div class="access-header">Admin</div>
+              <ul>
+                <li>Full system access</li>
+                <li>Manage all users</li>
+                <li>Configure system settings</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-    
+
     <script>
-        function showHelp() {
-            alert('RAG (Retrieval-Augmented Generation) combines document search with AI to provide accurate, context-aware answers.\n\n1. Upload PDF documents\n2. System indexes them with embeddings\n3. Ask questions in natural language\n4. AI retrieves relevant context and generates answers');
-        }
+      function showHelp() {
+        alert(
+          "RAG (Retrieval-Augmented Generation) combines document search with AI to provide accurate, context-aware answers.\n\n1. Upload PDF documents\n2. System indexes them with embeddings\n3. Ask questions in natural language\n4. AI retrieves relevant context and generates answers"
+        );
+      }
     </script>
-</body>
+  </body>
 </html>

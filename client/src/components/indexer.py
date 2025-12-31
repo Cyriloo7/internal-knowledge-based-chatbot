@@ -6,26 +6,29 @@ from PIL import Image
 from langchain_core.documents import Document
 from dotenv import load_dotenv
 import fitz  # PyMuPDF
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredPowerPointLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 import google.generativeai as genai
-from langchain_core.documents import Document
 
 
 class Indexer:
-    def __init__(self, pdf_path):
+    def __init__(self, file_path):
         load_dotenv()
         genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-        self.pdf_path = pdf_path
+        self.file_path = file_path
+        self.file_ext = os.path.splitext(file_path)[1].lower()
         self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         self.vision_model = genai.GenerativeModel('models/gemini-2.5-flash')
-        # self.vector_store = Chroma(collection_name="documents", embedding_function=self.embeddings, persist_directory="chroma_db")
 
     def extract_images_from_doc(self, pdf_path):
+        """Extract images from PDF files"""
+        if self.file_ext != '.pdf':
+            return []
+        
         doc = fitz.open(pdf_path)
-        images =[]
+        images = []
         for page_index in range(len(doc)):
             page = doc[page_index]
             for img in page.get_images(full=True):
@@ -36,13 +39,14 @@ class Indexer:
         return images
     
     def image_to_document(self, image_bytes, page_num):
+        """Convert image to document with OCR and caption"""
         image = Image.open(io.BytesIO(image_bytes))
 
-        #OCR
+        # OCR
         import pytesseract
         ocr_text = pytesseract.image_to_string(image).strip()
 
-        #gemini caption
+        # Gemini caption
         caption_prompt = """
         Generate a concise technical caption for this image.
         Describe diagrams, architecture, flow, components, and relationships.
@@ -61,35 +65,66 @@ class Indexer:
             page_content=combined_text,
             metadata={
                 "type": "image",
-                "source": self.pdf_path,
+                "source": self.file_path,
                 "page_num": page_num,
             }
         )
     
-    def index_document(self, level):
-        if not os.path.exists(self.pdf_path):
-            raise FileExistsError(f"The file {self.pdf_path} does not exist.")
-
-        loader = PyPDFLoader(self.pdf_path)
-
-        try:
+    def load_document(self):
+        """Load document based on file extension"""
+        if self.file_ext == '.pdf':
+            loader = PyPDFLoader(self.file_path)
             pages = loader.load()
+            return pages
+        elif self.file_ext == '.txt':
+            loader = TextLoader(self.file_path, encoding='utf-8')
+            pages = loader.load()
+            return pages
+        elif self.file_ext in ['.ppt', '.pptx']:
+            loader = UnstructuredPowerPointLoader(self.file_path)
+            pages = loader.load()
+            return pages
+        elif self.file_ext in ['.doc', '.docx']:
+            # Use python-docx for DOCX files
+            try:
+                from docx import Document as DocxDocument
+                doc = DocxDocument(self.file_path)
+                full_text = []
+                for para in doc.paragraphs:
+                    full_text.append(para.text)
+                
+                # Combine all paragraphs into a single document
+                full_text_str = '\n'.join(full_text)
+                return [Document(page_content=full_text_str, metadata={"source": self.file_path})]
+            except ImportError:
+                raise ImportError("python-docx is required for DOCX files. Install it with: pip install python-docx")
+        else:
+            raise ValueError(f"Unsupported file format: {self.file_ext}")
+    
+    def index_document(self, level):
+        """Index a document into the vector store"""
+        if not os.path.exists(self.file_path):
+            raise FileNotFoundError(f"The file {self.file_path} does not exist.")
+
+        # Load document based on file type
+        try:
+            pages = self.load_document()
         except Exception as e:
-            raise RuntimeError(f"Failed to load PDF file: {e}")
+            raise RuntimeError(f"Failed to load file: {e}")
+        
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=500)
         docs_split = text_splitter.split_documents(pages)
         for doc in docs_split:
-            doc.metadata.update({"type": "text", "source": self.pdf_path})
+            doc.metadata.update({"type": "text", "source": self.file_path})
     
-
-        
+        # Extract images only from PDF files
         image_doc = []
-        for pagenum, image_bytes in self.extract_images_from_doc(self.pdf_path):
-            try:
-                image_doc.append(self.image_to_document(image_bytes, pagenum))
-            except Exception as e:
-                print(f"Error processing image on page {pagenum}: {e}")
-
+        if self.file_ext == '.pdf':
+            for pagenum, image_bytes in self.extract_images_from_doc(self.file_path):
+                try:
+                    image_doc.append(self.image_to_document(image_bytes, pagenum))
+                except Exception as e:
+                    print(f"Error processing image on page {pagenum}: {e}")
 
         vectorstorepath = "chroma_vectorstore"
         collection_name = level
@@ -115,8 +150,7 @@ class Indexer:
         )
         existing = vector_store._collection.get(include=[])
         existing_ids = set(existing["ids"])
-        # print(existing_ids)
-        # exit()
+
         new_docs = []
         new_ids = []
 
@@ -125,28 +159,12 @@ class Indexer:
                 new_docs.append(doc)
                 new_ids.append(id_)
 
-
         try:
             if new_docs:
                 vector_store.add_documents(new_docs, ids=new_ids)
-                # vector_store.persist()
                 print(f"✅ Indexed {len(new_docs)} new documents into collection '{collection_name}'")
             else:
                 print("✅ No new documents to add")
 
-            # vectorstore = Chroma.from_documents(
-            #     documents=docs_split, 
-            #     embedding=embeddings,
-            #     persist_directory=path,
-            #     collection_name="my_collection"
-            # )
-
         except Exception as e:
             raise RuntimeError(f"Failed to create or persist Chroma vector store: {e}")
-        
-
-# if __name__ == "__main__":
-#     level = "level1"
-#     path = input("Enter the path to the PDF file: ")
-#     indexer = Indexer(path)
-#     indexer.index_document(level=level)
