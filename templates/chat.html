@@ -155,7 +155,10 @@
             <select id="collection">
               {% for level in collections %}
               <option value="{{ level }}">
-                {{ level|replace('-', ' ')|title }}
+                {% if level == 'level-1' %}Level 1 (General) {% elif level ==
+                'level-2' %}Level 2 (Team) {% elif level == 'level-3' %}Level 3
+                (Department) {% elif level == 'level-4' %}Level 4 (Organization)
+                {% endif %}
               </option>
               {% endfor %}
             </select>

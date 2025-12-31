@@ -204,24 +204,61 @@
                   <th>ID</th>
                   <th>Filename</th>
                   <th>Collection</th>
-                  <th>Access Level</th>
                   <th>Uploaded By</th>
                   <th>Uploaded At</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="documentsTableBody">
                 {% for doc in documents %}
                 <tr>
                   <td>{{ doc.id }}</td>
                   <td>{{ doc.filename }}</td>
                   <td><code>{{ doc.collection_name }}</code></td>
-                  <td>
-                    <span class="badge badge-{{ doc.access_level }}"
-                      >{{ doc.access_level }}</span
-                    >
-                  </td>
                   <td>User #{{ doc.uploaded_by }}</td>
                   <td>{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                  <td>
+                    <button
+                      class="btn-icon"
+                      onclick="editDocument({{ doc.id }}, '{{ doc.filename }}', '{{ doc.collection_name }}')"
+                      title="Edit"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                        ></path>
+                        <path
+                          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                        ></path>
+                      </svg>
+                    </button>
+                    <button
+                      class="btn-icon btn-danger"
+                      onclick="deleteDocument({{ doc.id }})"
+                      title="Delete"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path
+                          d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        ></path>
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -290,6 +327,61 @@
       </div>
     </div>
 
+    <!-- Edit Document Modal -->
+    <div id="editDocumentModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeEditDocumentModal()"
+          >&times;</span
+        >
+        <h2>Edit Document</h2>
+        <form id="editDocumentForm">
+          <input type="hidden" id="editDocumentId" />
+          <div class="form-group">
+            <label for="editDocumentFilename">Filename</label>
+            <input type="text" id="editDocumentFilename" required />
+            <small
+              style="
+                color: var(--text-light);
+                font-size: 13px;
+                margin-top: 4px;
+                display: block;
+              "
+            >
+              Note: Only the display name will be updated. The actual file
+              remains unchanged.
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="editDocumentCollection">Collection</label>
+            <select id="editDocumentCollection" required>
+              <option value="level-1">Level 1 (General)</option>
+              <option value="level-2">Level 2 (Team)</option>
+              <option value="level-3">Level 3 (Department)</option>
+              <option value="level-4">Level 4 (Organization)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="reindexDocument" />
+              Re-index document with new collection
+            </label>
+            <small
+              style="
+                color: var(--text-light);
+                font-size: 13px;
+                margin-top: 4px;
+                display: block;
+              "
+            >
+              Check this to move the document to a different collection. This
+              will re-process the document.
+            </small>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Document</button>
+        </form>
+      </div>
+    </div>
+
     <script>
       function showTab(tabName) {
         document.querySelectorAll(".tab-content").forEach((tab) => {
@@ -313,6 +405,10 @@
 
       function closeEditUserModal() {
         document.getElementById("editUserModal").style.display = "none";
+      }
+
+      function closeEditDocumentModal() {
+        document.getElementById("editDocumentModal").style.display = "none";
       }
 
       // Add User
@@ -412,6 +508,77 @@
           })
           .catch((error) => {
             alert("Error deleting user");
+          });
+      }
+
+      // Edit Document
+      function editDocument(docId, filename, collection) {
+        document.getElementById("editDocumentId").value = docId;
+        document.getElementById("editDocumentFilename").value = filename;
+        document.getElementById("editDocumentCollection").value = collection;
+        document.getElementById("reindexDocument").checked = false;
+        document.getElementById("editDocumentModal").style.display = "flex";
+      }
+
+      document
+        .getElementById("editDocumentForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const docId = document.getElementById("editDocumentId").value;
+          const documentData = {
+            filename: document.getElementById("editDocumentFilename").value,
+            collection_name: document.getElementById("editDocumentCollection")
+              .value,
+            reindex: document.getElementById("reindexDocument").checked,
+          };
+
+          try {
+            const response = await fetch(`/api/documents/${docId}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(documentData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              alert("Document updated successfully!");
+              location.reload();
+            } else {
+              alert("Error: " + (data.error || "Failed to update document"));
+            }
+          } catch (error) {
+            alert("Error updating document");
+          }
+        });
+
+      // Delete Document
+      function deleteDocument(docId) {
+        if (
+          !confirm(
+            "Are you sure you want to delete this document? This will also remove it from the vector store."
+          )
+        ) {
+          return;
+        }
+
+        fetch(`/api/documents/${docId}`, {
+          method: "DELETE",
+        })
+          .then(async (response) => {
+            const data = await response.json();
+            if (response.ok) {
+              alert("Document deleted successfully!");
+              location.reload();
+            } else {
+              alert("Error: " + (data.error || "Failed to delete document"));
+            }
+          })
+          .catch((error) => {
+            alert("Error deleting document");
           });
       }
 

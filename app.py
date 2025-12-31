@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import os
+import shutil
 from datetime import datetime
 from client.src.components.indexer import Indexer
 from client.src.components.retriever import Retriever
@@ -488,6 +489,91 @@ def manage_conversation(conversation_id):
         db.session.delete(conversation)
         db.session.commit()
         return jsonify({'success': True})
+
+@app.route('/api/documents/<int:document_id>', methods=['PUT', 'DELETE'])
+@role_required('admin')
+def manage_document(document_id):
+    document = Document.query.get_or_404(document_id)
+    
+    if request.method == 'PUT':
+        data = request.get_json()
+        
+        old_filename = document.filename
+        old_collection = document.collection_name
+        
+        new_filename = data.get('filename', document.filename).strip()
+        new_collection = data.get('collection_name', document.collection_name)
+        reindex = data.get('reindex', False)
+        
+        # Validate collection name
+        if new_collection not in COLLECTION_LEVELS:
+            return jsonify({'error': 'Invalid collection level'}), 400
+        
+        # Update filename in database
+        if new_filename and new_filename != old_filename:
+            document.filename = new_filename
+        
+        # Handle collection change with re-indexing
+        if reindex and new_collection != old_collection:
+            try:
+                # Get old file path
+                old_folder = os.path.join('uploads', old_collection)
+                old_filepath = os.path.join(old_folder, old_filename)
+                
+                # Create new folder
+                new_folder = os.path.join('uploads', new_collection)
+                os.makedirs(new_folder, exist_ok=True)
+                
+                # Copy file to new location
+                new_filepath = os.path.join(new_folder, old_filename)
+                if os.path.exists(old_filepath):
+                    import shutil
+                    shutil.copy2(old_filepath, new_filepath)
+                    
+                    # Re-index in new collection
+                    indexer = Indexer(new_filepath)
+                    indexer.index_document(level=new_collection)
+                    
+                    # Update database
+                    document.collection_name = new_collection
+                    
+                    # Note: We don't delete from old vector store to avoid data loss
+                    # Admin can manually clean up if needed
+                else:
+                    return jsonify({'error': 'Original file not found'}), 404
+                    
+            except Exception as e:
+                return jsonify({'error': f'Re-indexing failed: {str(e)}'}), 500
+        else:
+            # Just update collection name without re-indexing
+            document.collection_name = new_collection
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Document updated successfully'})
+    
+    elif request.method == 'DELETE':
+        try:
+            # Get file path
+            folder = os.path.join('uploads', document.collection_name)
+            filepath = os.path.join(folder, document.filename)
+            
+            # Delete physical file if it exists
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            
+            # Delete from database
+            db.session.delete(document)
+            db.session.commit()
+            
+            # Note: Vector store entries remain. Admin should manually clean vector store if needed
+            # This is safer than automatically deleting from vector store
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Document deleted successfully. Note: Vector store entries may still exist.'
+            })
+        except Exception as e:
+            return jsonify({'error': f'Failed to delete document: {str(e)}'}), 500
 
 # Initialize database and create default users
 def init_db():
