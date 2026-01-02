@@ -30,20 +30,27 @@ class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(200), nullable=False)
     collection_name = db.Column(db.String(100), nullable=False)
-    uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    uploaded_by = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to User
+    uploader = db.relationship('User', foreign_keys=[uploaded_by], backref='uploaded_documents')
 
 class Conversation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
     title = db.Column(db.String(200), nullable=False)
     collection_name = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationship to User
+    user = db.relationship('User', foreign_keys=[user_id], backref='conversations')
+    
     def to_dict(self):
         return {
             'id': self.id,
+            'user_id': self.user_id,
             'title': self.title,
             'collection_name': self.collection_name,
             'created_at': self.created_at.isoformat(),
@@ -52,12 +59,15 @@ class Conversation(db.Model):
 
 class ChatHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.String(80), db.ForeignKey('user.username'), nullable=False)
     conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=True)
     message = db.Column(db.Text, nullable=False)
     response = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     collection_name = db.Column(db.String(100))
+    
+    # Relationship to User
+    user = db.relationship('User', foreign_keys=[user_id], backref='chat_history')
 
 # Role hierarchy for access control
 ROLE_HIERARCHY = {
@@ -168,7 +178,7 @@ def chat():
         Document.collection_name.in_(allowed_collections)
     ).all()
     
-    conversations = Conversation.query.filter_by(user_id=user.id).order_by(
+    conversations = Conversation.query.filter_by(user_id=user.username).order_by(
         Conversation.updated_at.desc()
     ).all()
     
@@ -176,7 +186,7 @@ def chat():
     if conversation_id:
         current_conversation = Conversation.query.filter_by(
             id=conversation_id,
-            user_id=user.id
+            user_id=user.username
         ).first()
     
     if not current_conversation and conversations:
@@ -214,7 +224,16 @@ def upload_documents():
 def admin_panel():
     users = User.query.all()
     documents = Document.query.all()
-    return render_template('admin.html', users=users, documents=documents)
+    conversations = Conversation.query.order_by(Conversation.updated_at.desc()).all()
+    chat_history = ChatHistory.query.order_by(ChatHistory.timestamp.desc()).limit(100).all()
+    
+    return render_template(
+        'admin.html', 
+        users=users, 
+        documents=documents,
+        conversations=conversations,
+        chat_history=chat_history
+    )
 
 @app.route('/api/chat', methods=['POST'])
 @login_required
@@ -235,14 +254,14 @@ def chat_message():
     if conversation_id:
         conversation = Conversation.query.filter_by(
             id=conversation_id,
-            user_id=user.id
+            user_id=user.username
         ).first()
     
     if not conversation:
         # Create title from first message (max 50 chars)
         title = message[:50] + "..." if len(message) > 50 else message
         conversation = Conversation(
-            user_id=user.id,
+            user_id=user.username,  # Store username
             title=title,
             collection_name=collection_name
         )
@@ -281,9 +300,9 @@ def chat_message():
 
     response = result['messages'][-1].text
 
-    # Save chat history
+    # Save chat history with username
     db.session.add(ChatHistory(
-        user_id=user.id,
+        user_id=user.username,  # Store username
         conversation_id=conversation.id,
         message=message,
         response=response,
@@ -337,11 +356,11 @@ def upload_document():
         indexer = Indexer(filepath)
         indexer.index_document(level=collection_name)
 
-        # Save metadata in DB
+        # Save metadata in DB with username
         doc = Document(
             filename=filename,
             collection_name=collection_name,
-            uploaded_by=session['user_id']
+            uploaded_by=session['username']  # Store username
         )
         db.session.add(doc)
         db.session.commit()
@@ -407,13 +426,13 @@ def manage_user(user_id):
 @login_required
 def get_chat_history():
     conversation_id = request.args.get('conversation_id', type=int)
-    user_id = session['user_id']
+    user = User.query.get(session['user_id'])
     
     if conversation_id:
         # Verify conversation belongs to user
         conversation = Conversation.query.filter_by(
             id=conversation_id,
-            user_id=user_id
+            user_id=user.username
         ).first()
         if not conversation:
             return jsonify({'error': 'Conversation not found'}), 404
@@ -424,7 +443,7 @@ def get_chat_history():
     else:
         # Fallback to old behavior for backward compatibility
         collection_name = request.args.get('collection', None)
-        query = ChatHistory.query.filter_by(user_id=user_id)
+        query = ChatHistory.query.filter_by(user_id=user.username)
         if collection_name:
             query = query.filter_by(collection_name=collection_name)
         history = query.order_by(ChatHistory.timestamp.asc()).limit(50).all()
@@ -439,7 +458,7 @@ def get_chat_history():
 @app.route('/api/conversations', methods=['GET', 'POST'])
 @login_required
 def manage_conversations():
-    user_id = session['user_id']
+    user = User.query.get(session['user_id'])
     
     if request.method == 'POST':
         # Create new conversation
@@ -448,7 +467,7 @@ def manage_conversations():
         collection_name = data.get('collection_name', 'level-1')
         
         conversation = Conversation(
-            user_id=user_id,
+            user_id=user.username,  # Store username
             title=title,
             collection_name=collection_name
         )
@@ -458,7 +477,7 @@ def manage_conversations():
         return jsonify(conversation.to_dict()), 201
     
     # GET: List all conversations
-    conversations = Conversation.query.filter_by(user_id=user_id).order_by(
+    conversations = Conversation.query.filter_by(user_id=user.username).order_by(
         Conversation.updated_at.desc()
     ).all()
     
@@ -467,10 +486,10 @@ def manage_conversations():
 @app.route('/api/conversations/<int:conversation_id>', methods=['PUT', 'DELETE'])
 @login_required
 def manage_conversation(conversation_id):
-    user_id = session['user_id']
+    user = User.query.get(session['user_id'])
     conversation = Conversation.query.filter_by(
         id=conversation_id,
-        user_id=user_id
+        user_id=user.username
     ).first_or_404()
     
     if request.method == 'PUT':

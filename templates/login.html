@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RAG Chatbot - Login</title>
     <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='icons/favicon.svg') }}"
+    />
+    <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
@@ -12,16 +17,32 @@
   <body class="login-page">
     <div class="login-container">
       <div class="login-box">
-        <div class="logo">
-          <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-            <rect width="60" height="60" rx="12" fill="#4F46E5" />
-            <path
-              d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
-              stroke="white"
-              stroke-width="3"
-              fill="none"
-            />
-            <circle cx="30" cy="30" r="8" fill="white" />
+        <div
+          class="logo-small"
+          style="
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+          "
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+            <rect x="2" y="28" width="6" height="12" rx="2" fill="#546E7A" />
+            <rect x="56" y="28" width="6" height="12" rx="2" fill="#546E7A" />
+
+            <rect x="6" y="10" width="52" height="46" rx="8" fill="#78909C" />
+
+            <rect x="28" y="4" width="8" height="6" fill="#546E7A" />
+            <circle cx="32" cy="4" r="4" fill="#EF5350" />
+
+            <rect x="12" y="20" width="40" height="18" rx="4" fill="#263238" />
+
+            <circle cx="24" cy="29" r="5" fill="#FFCA28" />
+            <circle cx="40" cy="29" r="5" fill="#FFCA28" />
+
+            <rect x="20" y="44" width="24" height="6" rx="1" fill="#263238" />
           </svg>
         </div>
         <h1>RAG Document Assistant</h1>
@@ -61,16 +82,6 @@
             ></span>
           </button>
         </form>
-
-        <div class="demo-accounts">
-          <p class="demo-title">Demo Accounts:</p>
-          <ul>
-            <li><strong>Admin:</strong> admin / admin123</li>
-            <li><strong>A-Manager:</strong> manager-a / pass123</li>
-            <li><strong>B-Manager:</strong> manager-b / pass123</li>
-            <li><strong>User:</strong> user / user123</li>
-          </ul>
-        </div>
       </div>
     </div>
 

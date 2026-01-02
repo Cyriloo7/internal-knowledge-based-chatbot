@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Panel - RAG Chatbot</title>
     <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='icons/favicon.svg') }}"
+    />
+    <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
@@ -13,16 +18,29 @@
     <div class="app-container">
       <nav class="sidebar">
         <div class="sidebar-header">
-          <div class="logo-small">
-            <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
-              <rect width="60" height="60" rx="12" fill="#4F46E5" />
-              <path
-                d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
-                stroke="white"
-                stroke-width="3"
-                fill="none"
+          <div class="logo-small" , style="width: 60px; height: 60px">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+              <rect x="2" y="28" width="6" height="12" rx="2" fill="#546E7A" />
+              <rect x="56" y="28" width="6" height="12" rx="2" fill="#546E7A" />
+
+              <rect x="6" y="10" width="52" height="46" rx="8" fill="#78909C" />
+
+              <rect x="28" y="4" width="8" height="6" fill="#546E7A" />
+              <circle cx="32" cy="4" r="4" fill="#EF5350" />
+
+              <rect
+                x="12"
+                y="20"
+                width="40"
+                height="18"
+                rx="4"
+                fill="#263238"
               />
-              <circle cx="30" cy="30" r="8" fill="white" />
+
+              <circle cx="24" cy="29" r="5" fill="#FFCA28" />
+              <circle cx="40" cy="29" r="5" fill="#FFCA28" />
+
+              <rect x="20" y="44" width="24" height="6" rx="1" fill="#263238" />
             </svg>
           </div>
           <h2>RAG Assistant</h2>
@@ -112,8 +130,15 @@
           <button class="tab-button" onclick="showTab('documents')">
             Documents
           </button>
+          <button class="tab-button" onclick="showTab('conversations')">
+            Conversations
+          </button>
+          <button class="tab-button" onclick="showTab('chathistory')">
+            Chat History
+          </button>
         </div>
 
+        <!-- Users Tab -->
         <div id="usersTab" class="tab-content active">
           <div class="table-container">
             <table class="data-table">
@@ -132,7 +157,7 @@
                 {% for user in users %}
                 <tr>
                   <td>{{ user.id }}</td>
-                  <td>{{ user.username }}</td>
+                  <td><strong>{{ user.username }}</strong></td>
                   <td>{{ user.email }}</td>
                   <td>
                     <span class="badge badge-{{ user.role }}"
@@ -196,6 +221,7 @@
           </div>
         </div>
 
+        <!-- Documents Tab -->
         <div id="documentsTab" class="tab-content">
           <div class="table-container">
             <table class="data-table">
@@ -214,8 +240,12 @@
                 <tr>
                   <td>{{ doc.id }}</td>
                   <td>{{ doc.filename }}</td>
-                  <td><code>{{ doc.collection_name }}</code></td>
-                  <td>User #{{ doc.uploaded_by }}</td>
+                  <td>
+                    <span class="badge badge-{{ doc.collection_name }}"
+                      >{{ doc.collection_name }}</span
+                    >
+                  </td>
+                  <td><strong>{{ doc.uploaded_by }}</strong></td>
                   <td>{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
                   <td>
                     <button
@@ -256,6 +286,131 @@
                         <path
                           d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
                         ></path>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Conversations Tab -->
+        <div id="conversationsTab" class="tab-content">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Title</th>
+                  <th>Collection</th>
+                  <th>Created</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for conv in conversations %}
+                <tr>
+                  <td>{{ conv.id }}</td>
+                  <td><strong>{{ conv.user_id }}</strong></td>
+                  <td>{{ conv.title }}</td>
+                  <td>
+                    <span class="badge badge-{{ conv.collection_name }}"
+                      >{{ conv.collection_name }}</span
+                    >
+                  </td>
+                  <td>{{ conv.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                  <td>{{ conv.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                  <td>
+                    <button
+                      class="btn-icon"
+                      onclick="viewConversation({{ conv.id }})"
+                      title="View Details"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                        ></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Chat History Tab -->
+        <div id="chathistoryTab" class="tab-content">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Conversation ID</th>
+                  <th>Message Preview</th>
+                  <th>Collection</th>
+                  <th>Timestamp</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for history in chat_history %}
+                <tr>
+                  <td>{{ history.id }}</td>
+                  <td><strong>{{ history.user_id }}</strong></td>
+                  <td>
+                    {{ history.conversation_id if history.conversation_id else
+                    'N/A' }}
+                  </td>
+                  <td
+                    style="
+                      max-width: 300px;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                    "
+                  >
+                    {{ history.message[:100] }}{% if history.message|length >
+                    100 %}...{% endif %}
+                  </td>
+                  <td>
+                    <span class="badge badge-{{ history.collection_name }}"
+                      >{{ history.collection_name }}</span
+                    >
+                  </td>
+                  <td>{{ history.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                  <td>
+                    <button
+                      class="btn-icon"
+                      onclick="viewChatDetails({{ history.id }}, '{{ history.message|replace('\'', '\\')|replace('\n', '\\n') }}', '{{ history.response|replace('\'', '\\')|replace('\n', '\\n') }}')"
+                      title="View Full Message"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                        ></path>
+                        <circle cx="12" cy="12" r="3"></circle>
                       </svg>
                     </button>
                   </td>
@@ -382,6 +537,78 @@
       </div>
     </div>
 
+    <!-- Chat Details Modal -->
+    <div id="chatDetailsModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeChatDetailsModal()"
+          >&times;</span
+        >
+        <h2>Chat Message Details</h2>
+        <div style="margin-top: 20px">
+          <h3 style="color: var(--primary); margin-bottom: 10px">
+            User Message:
+          </h3>
+          <div
+            style="
+              background: var(--bg);
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            "
+          >
+            <p id="chatDetailsMessage"></p>
+          </div>
+
+          <h3 style="color: var(--secondary); margin-bottom: 10px">
+            AI Response:
+          </h3>
+          <div
+            style="
+              background: var(--bg);
+              padding: 15px;
+              border-radius: 8px;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            "
+          >
+            <p id="chatDetailsResponse"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      /* Additional styles for admin panel */
+      .modal-content h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .data-table td strong {
+        color: var(--primary);
+      }
+
+      .data-table td[style*="max-width"] {
+        font-size: 13px;
+        color: var(--text-light);
+      }
+
+      /* Badge styles for collection levels */
+      .badge {
+        text-transform: uppercase;
+        font-size: 11px;
+        padding: 4px 10px;
+      }
+
+      /* Improved modal scrolling */
+      .modal-content {
+        max-height: 85vh;
+      }
+    </style>
+
     <script>
       function showTab(tabName) {
         document.querySelectorAll(".tab-content").forEach((tab) => {
@@ -409,6 +636,20 @@
 
       function closeEditDocumentModal() {
         document.getElementById("editDocumentModal").style.display = "none";
+      }
+
+      function closeChatDetailsModal() {
+        document.getElementById("chatDetailsModal").style.display = "none";
+      }
+
+      function viewChatDetails(id, message, response) {
+        document.getElementById("chatDetailsMessage").textContent = message;
+        document.getElementById("chatDetailsResponse").textContent = response;
+        document.getElementById("chatDetailsModal").style.display = "flex";
+      }
+
+      function viewConversation(conversationId) {
+        window.location.href = `/chat?conversation_id=${conversationId}`;
       }
 
       // Add User
