@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Panel - RAG Chatbot</title>
+    <title>Admin Panel - benbot</title>
     <link
       rel="icon"
       type="image/svg+xml"
@@ -18,37 +18,87 @@
     <div class="app-container">
       <nav class="sidebar">
         <div class="sidebar-header">
-          <div class="logo-small" , style="width: 60px; height: 60px">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-              <rect x="2" y="28" width="6" height="12" rx="2" fill="#546E7A" />
-              <rect x="56" y="28" width="6" height="12" rx="2" fill="#546E7A" />
+          <div class="sidebar-header-content">
+            <div class="logo-small" , style="width: 60px; height: 60px">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+                <rect
+                  x="2"
+                  y="28"
+                  width="6"
+                  height="12"
+                  rx="2"
+                  fill="#546E7A"
+                />
+                <rect
+                  x="56"
+                  y="28"
+                  width="6"
+                  height="12"
+                  rx="2"
+                  fill="#546E7A"
+                />
 
-              <rect x="6" y="10" width="52" height="46" rx="8" fill="#78909C" />
+                <rect
+                  x="6"
+                  y="10"
+                  width="52"
+                  height="46"
+                  rx="8"
+                  fill="#78909C"
+                />
 
-              <rect x="28" y="4" width="8" height="6" fill="#546E7A" />
-              <circle cx="32" cy="4" r="4" fill="#EF5350" />
+                <rect x="28" y="4" width="8" height="6" fill="#546E7A" />
+                <circle cx="32" cy="4" r="4" fill="#EF5350" />
 
-              <rect
-                x="12"
-                y="20"
-                width="40"
-                height="18"
-                rx="4"
-                fill="#263238"
-              />
+                <rect
+                  x="12"
+                  y="20"
+                  width="40"
+                  height="18"
+                  rx="4"
+                  fill="#263238"
+                />
 
-              <circle cx="24" cy="29" r="5" fill="#FFCA28" />
-              <circle cx="40" cy="29" r="5" fill="#FFCA28" />
+                <circle cx="24" cy="29" r="5" fill="#FFCA28" />
+                <circle cx="40" cy="29" r="5" fill="#FFCA28" />
 
-              <rect x="20" y="44" width="24" height="6" rx="1" fill="#263238" />
-            </svg>
+                <rect
+                  x="20"
+                  y="44"
+                  width="24"
+                  height="6"
+                  rx="1"
+                  fill="#263238"
+                />
+              </svg>
+            </div>
+            <h2>benbot</h2>
           </div>
-          <h2>RAG Assistant</h2>
+          <button
+            class="sidebar-toggle-btn"
+            id="sidebarToggle"
+            onclick="toggleSidebar()"
+            title="Toggle sidebar"
+          >
+            <svg
+              id="sidebarToggleIcon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
         <ul class="nav-menu">
           <li>
-            <a href="/dashboard">
+            <a href="/dashboard" title="Dashboard">
               <svg
                 width="20"
                 height="20"
@@ -62,11 +112,11 @@
                 <rect x="14" y="14" width="7" height="7"></rect>
                 <rect x="3" y="14" width="7" height="7"></rect>
               </svg>
-              Dashboard
+              <span>Dashboard</span>
             </a>
           </li>
           <li>
-            <a href="/chat">
+            <a href="/chat" title="Chat">
               <svg
                 width="20"
                 height="20"
@@ -79,11 +129,11 @@
                   d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
                 ></path>
               </svg>
-              Chat
+              <span>Chat</span>
             </a>
           </li>
           <li class="active">
-            <a href="/admin">
+            <a href="/admin" title="Admin Panel">
               <svg
                 width="20"
                 height="20"
@@ -94,19 +144,62 @@
               >
                 <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
               </svg>
-              Admin Panel
+              <span>Admin Panel</span>
             </a>
           </li>
         </ul>
 
         <div class="sidebar-footer">
-          <a href="/logout" class="btn-logout">Logout</a>
+          <button
+            class="theme-toggle"
+            id="themeToggle"
+            onclick="toggleTheme()"
+            title="Toggle theme"
+          >
+            <svg
+              id="themeIcon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
+          <a href="/logout" class="btn-logout">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Logout</span>
+          </a>
         </div>
       </nav>
 
       <main class="main-content">
         <div class="page-header">
-          <h1>Admin Panel</h1>
+          <div>
+            <h1>Admin Panel</h1>
+            <p style="color: var(--text-light); margin-top: 4px">
+              Manage users, documents, and system data
+            </p>
+          </div>
           <button class="btn btn-primary" onclick="showAddUserModal()">
             <svg
               width="16"
@@ -121,6 +214,118 @@
             </svg>
             Add New User
           </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Total Users</span>
+              <div class="stat-card-icon">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-card-value" id="statUsers">{{ users|length }}</div>
+            <div class="stat-card-change">All registered users</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Documents</span>
+              <div
+                class="stat-card-icon"
+                style="
+                  background: var(--secondary-light);
+                  color: var(--secondary);
+                "
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                  ></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-card-value" id="statDocuments">
+              {{ documents|length }}
+            </div>
+            <div class="stat-card-change">Indexed documents</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Conversations</span>
+              <div
+                class="stat-card-icon"
+                style="background: var(--warning-light); color: var(--warning)"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-card-value" id="statConversations">
+              {{ conversations|length }}
+            </div>
+            <div class="stat-card-change">Active conversations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Chat History</span>
+              <div
+                class="stat-card-icon"
+                style="background: var(--danger-light); color: var(--danger)"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                  ></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-card-value" id="statHistory">
+              {{ chat_history|length }}
+            </div>
+            <div class="stat-card-change">Recent messages</div>
+          </div>
         </div>
 
         <div class="admin-tabs">
@@ -140,16 +345,110 @@
 
         <!-- Users Tab -->
         <div id="usersTab" class="tab-content active">
+          <div class="admin-controls">
+            <div class="admin-search">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input
+                type="text"
+                id="usersSearch"
+                placeholder="Search users by name, email, or role..."
+                oninput="filterTable('users')"
+              />
+            </div>
+            <div class="admin-filters">
+              <select
+                class="filter-select"
+                id="usersRoleFilter"
+                onchange="filterTable('users')"
+              >
+                <option value="">All Roles</option>
+                <option value="user">User</option>
+                <option value="b-manager">B-Manager</option>
+                <option value="a-manager">A-Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+              <select
+                class="filter-select"
+                id="usersStatusFilter"
+                onchange="filterTable('users')"
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div class="sort-controls">
+              <button
+                class="sort-btn"
+                onclick="sortTable('users', 'id')"
+                id="sortUsersId"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M3 6h18M7 12h10M11 18h2"></path>
+                </svg>
+                Sort
+              </button>
+            </div>
+          </div>
           <div class="table-container">
-            <table class="data-table">
+            <table class="data-table" id="usersTable">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Created</th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('users', 'id')"
+                    data-column="id"
+                  >
+                    ID
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('users', 'username')"
+                    data-column="username"
+                  >
+                    Username
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('users', 'email')"
+                    data-column="email"
+                  >
+                    Email
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('users', 'role')"
+                    data-column="role"
+                  >
+                    Role
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('users', 'status')"
+                    data-column="status"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('users', 'created')"
+                    data-column="created"
+                  >
+                    Created
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -223,15 +522,95 @@
 
         <!-- Documents Tab -->
         <div id="documentsTab" class="tab-content">
+          <div class="admin-controls">
+            <div class="admin-search">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input
+                type="text"
+                id="documentsSearch"
+                placeholder="Search documents by filename or uploader..."
+                oninput="filterTable('documents')"
+              />
+            </div>
+            <div class="admin-filters">
+              <select
+                class="filter-select"
+                id="documentsCollectionFilter"
+                onchange="filterTable('documents')"
+              >
+                <option value="">All Collections</option>
+                <option value="level-1">Level 1</option>
+                <option value="level-2">Level 2</option>
+                <option value="level-3">Level 3</option>
+                <option value="level-4">Level 4</option>
+              </select>
+              <select
+                class="filter-select"
+                id="documentsCategoryFilter"
+                onchange="filterTable('documents')"
+              >
+                <option value="">All Categories</option>
+                <option value="0">Uncategorized</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
           <div class="table-container">
-            <table class="data-table">
+            <table class="data-table" id="documentsTable">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Filename</th>
-                  <th>Collection</th>
-                  <th>Uploaded By</th>
-                  <th>Uploaded At</th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('documents', 'id')"
+                    data-column="id"
+                  >
+                    ID
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('documents', 'filename')"
+                    data-column="filename"
+                  >
+                    Filename
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('documents', 'collection')"
+                    data-column="collection"
+                  >
+                    Collection
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('documents', 'category')"
+                    data-column="category"
+                  >
+                    Category
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('documents', 'uploaded_by')"
+                    data-column="uploaded_by"
+                  >
+                    Uploaded By
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('documents', 'uploaded_at')"
+                    data-column="uploaded_at"
+                  >
+                    Uploaded At
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -244,6 +623,15 @@
                     <span class="badge badge-{{ doc.collection_name }}"
                       >{{ doc.collection_name }}</span
                     >
+                  </td>
+                  <td data-category-id="{% if doc.category %}{{ doc.category.id }}{% else %}0{% endif %}">
+                    {% if doc.category %}
+                    <span class="badge" style="background-color: {{ doc.category.color }}; color: white;">
+                      {{ doc.category.name }}
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background-color: #6B7280; color: white;">Uncategorized</span>
+                    {% endif %}
                   </td>
                   <td><strong>{{ doc.uploaded_by }}</strong></td>
                   <td>{{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
@@ -298,20 +686,88 @@
 
         <!-- Conversations Tab -->
         <div id="conversationsTab" class="tab-content">
+          <div class="admin-controls">
+            <div class="admin-search">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input
+                type="text"
+                id="conversationsSearch"
+                placeholder="Search conversations by user or title..."
+                oninput="filterTable('conversations')"
+              />
+            </div>
+            <div class="admin-filters">
+              <select
+                class="filter-select"
+                id="conversationsCollectionFilter"
+                onchange="filterTable('conversations')"
+              >
+                <option value="">All Collections</option>
+                <option value="level-1">Level 1</option>
+                <option value="level-2">Level 2</option>
+                <option value="level-3">Level 3</option>
+                <option value="level-4">Level 4</option>
+              </select>
+            </div>
+          </div>
           <div class="table-container">
-            <table class="data-table">
+            <table class="data-table" id="conversationsTable">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>User</th>
-                  <th>Title</th>
-                  <th>Collection</th>
-                  <th>Created</th>
-                  <th>Last Updated</th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('conversations', 'id')"
+                    data-column="id"
+                  >
+                    ID
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('conversations', 'user')"
+                    data-column="user"
+                  >
+                    User
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('conversations', 'title')"
+                    data-column="title"
+                  >
+                    Title
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('conversations', 'collection')"
+                    data-column="collection"
+                  >
+                    Collection
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('conversations', 'created')"
+                    data-column="created"
+                  >
+                    Created
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('conversations', 'updated')"
+                    data-column="updated"
+                  >
+                    Last Updated
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="conversationsTableBody">
                 {% for conv in conversations %}
                 <tr>
                   <td>{{ conv.id }}</td>
@@ -354,20 +810,82 @@
 
         <!-- Chat History Tab -->
         <div id="chathistoryTab" class="tab-content">
+          <div class="admin-controls">
+            <div class="admin-search">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <input
+                type="text"
+                id="historySearch"
+                placeholder="Search chat history by user or message..."
+                oninput="filterTable('history')"
+              />
+            </div>
+            <div class="admin-filters">
+              <select
+                class="filter-select"
+                id="historyCollectionFilter"
+                onchange="filterTable('history')"
+              >
+                <option value="">All Collections</option>
+                <option value="level-1">Level 1</option>
+                <option value="level-2">Level 2</option>
+                <option value="level-3">Level 3</option>
+                <option value="level-4">Level 4</option>
+              </select>
+            </div>
+          </div>
           <div class="table-container">
-            <table class="data-table">
+            <table class="data-table" id="historyTable">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>User</th>
-                  <th>Conversation ID</th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('history', 'id')"
+                    data-column="id"
+                  >
+                    ID
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('history', 'user')"
+                    data-column="user"
+                  >
+                    User
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('history', 'conversation_id')"
+                    data-column="conversation_id"
+                  >
+                    Conversation ID
+                  </th>
                   <th>Message Preview</th>
-                  <th>Collection</th>
-                  <th>Timestamp</th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('history', 'collection')"
+                    data-column="collection"
+                  >
+                    Collection
+                  </th>
+                  <th
+                    class="table-header-sortable"
+                    onclick="sortTable('history', 'timestamp')"
+                    data-column="timestamp"
+                  >
+                    Timestamp
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="historyTableBody">
                 {% for history in chat_history %}
                 <tr>
                   <td>{{ history.id }}</td>
@@ -421,6 +939,93 @@
           </div>
         </div>
       </main>
+
+      <!-- Mobile Overlay -->
+      <div
+        class="mobile-overlay"
+        id="mobileOverlay"
+        onclick="closeAllMobileSidebars()"
+      ></div>
+
+      <!-- Mobile Bottom Navigation -->
+      <nav class="mobile-bottom-nav">
+        <a
+          href="/dashboard"
+          class="mobile-bottom-nav-item"
+          id="mobileNavDashboard"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="/chat" class="mobile-bottom-nav-item" id="mobileNavChat">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+          <span>Chat</span>
+        </a>
+        <button
+          class="mobile-bottom-nav-item"
+          id="mobileNavMenu"
+          onclick="toggleMobileSidebar()"
+          style="border: none; background: none; cursor: pointer; width: 100%"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <span>Menu</span>
+        </button>
+        {% if user.role == 'admin' %}
+        <a
+          href="/admin"
+          class="mobile-bottom-nav-item active"
+          id="mobileNavAdmin"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+          <span>Admin</span>
+        </a>
+        {% endif %}
+      </nav>
     </div>
 
     <!-- Add User Modal -->
@@ -508,7 +1113,11 @@
           </div>
           <div class="form-group">
             <label for="editDocumentCollection">Collection</label>
-            <select id="editDocumentCollection" required>
+            <select
+              id="editDocumentCollection"
+              required
+              onchange="handleCollectionChange()"
+            >
               <option value="level-1">Level 1 (General)</option>
               <option value="level-2">Level 2 (Team)</option>
               <option value="level-3">Level 3 (Department)</option>
@@ -517,7 +1126,7 @@
           </div>
           <div class="form-group">
             <label>
-              <input type="checkbox" id="reindexDocument" />
+              <input type="checkbox" id="reindexDocument" checked />
               Re-index document with new collection
             </label>
             <small
@@ -528,11 +1137,68 @@
                 display: block;
               "
             >
-              Check this to move the document to a different collection. This
-              will re-process the document.
+              Automatically enabled when collection changes. This will
+              re-process the document and update ChromaDB.
             </small>
           </div>
-          <button type="submit" class="btn btn-primary">Update Document</button>
+          <div id="reindexProgress" style="display: none; margin-top: 20px">
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 8px;
+              "
+            >
+              <div class="spinner-small" id="reindexSpinner"></div>
+              <div style="flex: 1">
+                <div
+                  style="font-weight: 600; margin-bottom: 4px"
+                  id="reindexStatus"
+                >
+                  Re-indexing document...
+                </div>
+                <div
+                  class="progress-bar"
+                  style="
+                    height: 8px;
+                    background: var(--bg-secondary);
+                    border-radius: 4px;
+                    overflow: hidden;
+                  "
+                >
+                  <div
+                    class="progress-fill"
+                    id="reindexProgressFill"
+                    style="
+                      height: 100%;
+                      background: linear-gradient(
+                        90deg,
+                        var(--primary),
+                        var(--primary-dark)
+                      );
+                      width: 0%;
+                      transition: width 0.3s ease;
+                      border-radius: 4px;
+                    "
+                  ></div>
+                </div>
+                <div
+                  style="
+                    font-size: 12px;
+                    color: var(--text-light);
+                    margin-top: 4px;
+                  "
+                  id="reindexDetails"
+                >
+                  Preparing...
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="updateDocumentBtn">
+            Update Document
+          </button>
         </form>
       </div>
     </div>
@@ -610,6 +1276,91 @@
     </style>
 
     <script>
+      // Theme Management
+      function initTheme() {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+        updateThemeIcon(savedTheme);
+      }
+
+      function toggleTheme() {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme") || "light";
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        updateThemeIcon(newTheme);
+      }
+
+      function updateThemeIcon(theme) {
+        const icon = document.getElementById("themeIcon");
+        if (!icon) return;
+
+        if (theme === "dark") {
+          icon.innerHTML = `
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          `;
+        } else {
+          icon.innerHTML = `
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          `;
+        }
+      }
+
+      // Sidebar Toggle Management
+      function initSidebar() {
+        const savedState = localStorage.getItem("sidebarCollapsed");
+        const sidebar = document.querySelector(".sidebar");
+        if (savedState === "true" && sidebar) {
+          sidebar.classList.add("collapsed");
+        }
+      }
+
+      // Initialize theme and sidebar on page load
+      initTheme();
+      initSidebar();
+
+      // Store original table data
+      const tableData = {
+        users: [],
+        documents: [],
+        conversations: [],
+        history: [],
+      };
+
+      // Store current sort state
+      const sortState = {
+        users: { column: null, direction: "asc" },
+        documents: { column: null, direction: "asc" },
+        conversations: { column: null, direction: "asc" },
+        history: { column: null, direction: "asc" },
+      };
+
+      // Initialize table data on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Store original table rows
+        tableData.users = Array.from(
+          document.querySelectorAll("#usersTableBody tr")
+        );
+        tableData.documents = Array.from(
+          document.querySelectorAll("#documentsTableBody tr")
+        );
+        tableData.conversations = Array.from(
+          document.querySelectorAll("#conversationsTableBody tr")
+        );
+        tableData.history = Array.from(
+          document.querySelectorAll("#historyTableBody tr")
+        );
+      });
+
       function showTab(tabName) {
         document.querySelectorAll(".tab-content").forEach((tab) => {
           tab.classList.remove("active");
@@ -620,6 +1371,316 @@
 
         document.getElementById(tabName + "Tab").classList.add("active");
         event.target.classList.add("active");
+      }
+
+      // Filter table function
+      function filterTable(tableType) {
+        const tbody = document.getElementById(tableType + "TableBody");
+        if (!tbody) return;
+
+        const searchInput =
+          document.getElementById(tableType + "Search") ||
+          document.getElementById(
+            tableType === "history" ? "historySearch" : tableType + "sSearch"
+          );
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+
+        let roleFilter = "";
+        let statusFilter = "";
+        let collectionFilter = "";
+        let categoryFilter = "";
+
+        if (tableType === "users") {
+          roleFilter = document.getElementById("usersRoleFilter")?.value || "";
+          statusFilter =
+            document.getElementById("usersStatusFilter")?.value || "";
+        } else if (tableType === "documents") {
+          collectionFilter =
+            document.getElementById("documentsCollectionFilter")?.value || "";
+          categoryFilter =
+            document.getElementById("documentsCategoryFilter")?.value || "";
+        } else if (tableType === "conversations") {
+          collectionFilter =
+            document.getElementById("conversationsCollectionFilter")?.value ||
+            "";
+        } else if (tableType === "history") {
+          collectionFilter =
+            document.getElementById("historyCollectionFilter")?.value || "";
+        }
+
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        let visibleCount = 0;
+
+        rows.forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          let visible = true;
+
+          // Search filter
+          if (searchTerm) {
+            const rowText = Array.from(cells)
+              .map((cell) => cell.textContent.toLowerCase())
+              .join(" ");
+            // For documents, also search in category name
+            if (tableType === "documents") {
+              const categoryCell = cells[3];
+              if (categoryCell) {
+                const categoryText = categoryCell.textContent.toLowerCase();
+                const fullText = rowText + " " + categoryText;
+                if (!fullText.includes(searchTerm)) {
+                  visible = false;
+                }
+              } else if (!rowText.includes(searchTerm)) {
+                visible = false;
+              }
+            } else if (!rowText.includes(searchTerm)) {
+              visible = false;
+            }
+          }
+
+          // Role filter (users only)
+          if (tableType === "users" && roleFilter) {
+            const roleCell = cells[3]?.textContent.trim().toLowerCase();
+            if (roleCell !== roleFilter.toLowerCase()) {
+              visible = false;
+            }
+          }
+
+          // Status filter (users only)
+          if (tableType === "users" && statusFilter) {
+            const statusCell = cells[4]?.textContent.trim().toLowerCase();
+            if (statusFilter === "active" && statusCell !== "active") {
+              visible = false;
+            } else if (
+              statusFilter === "inactive" &&
+              statusCell !== "inactive"
+            ) {
+              visible = false;
+            }
+          }
+
+          // Collection filter
+          if (collectionFilter) {
+            let collectionCell = null;
+            if (tableType === "documents") {
+              collectionCell = cells[2]?.textContent.trim().toLowerCase();
+            } else if (tableType === "conversations") {
+              collectionCell = cells[3]?.textContent.trim().toLowerCase();
+            } else if (tableType === "history") {
+              collectionCell = cells[4]?.textContent.trim().toLowerCase();
+            }
+            if (
+              collectionCell &&
+              !collectionCell.includes(collectionFilter.toLowerCase())
+            ) {
+              visible = false;
+            }
+          }
+
+          // Category filter (documents only)
+          if (tableType === "documents" && categoryFilter) {
+            const categoryCell = cells[3]; // Category is in the 4th column (index 3)
+            if (categoryCell) {
+              const categoryId = categoryCell.getAttribute('data-category-id');
+              // If filter is set and category ID doesn't match, hide the row
+              // categoryId "0" means uncategorized
+              if (categoryFilter === "0") {
+                // Filter for uncategorized documents
+                if (categoryId !== "0") {
+                  visible = false;
+                }
+              } else {
+                // Filter for specific category
+                if (categoryId !== categoryFilter) {
+                  visible = false;
+                }
+              }
+            }
+          }
+
+          row.style.display = visible ? "" : "none";
+          if (visible) visibleCount++;
+        });
+
+        // Show empty state if no results
+        showEmptyState(tbody, visibleCount === 0);
+      }
+
+      // Show/hide empty state
+      function showEmptyState(tbody, isEmpty) {
+        let emptyState = tbody.parentElement.querySelector(".empty-state");
+        if (isEmpty && !emptyState) {
+          emptyState = document.createElement("div");
+          emptyState.className = "empty-state";
+          emptyState.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <h3>No results found</h3>
+            <p>Try adjusting your search or filter criteria</p>
+          `;
+          tbody.parentElement.appendChild(emptyState);
+        } else if (!isEmpty && emptyState) {
+          emptyState.remove();
+        }
+      }
+
+      // Sort table function
+      function sortTable(tableType, column) {
+        const tbody = document.getElementById(tableType + "TableBody");
+        if (!tbody) return;
+
+        const state = sortState[tableType];
+        const isAsc = state.column === column && state.direction === "asc";
+        state.column = column;
+        state.direction = isAsc ? "desc" : "asc";
+
+        // Update header classes
+        const headers = document.querySelectorAll(
+          `#${tableType}Table .table-header-sortable`
+        );
+        headers.forEach((header) => {
+          header.classList.remove("sort-asc", "sort-desc");
+          if (header.dataset.column === column) {
+            header.classList.add(isAsc ? "sort-desc" : "sort-asc");
+          }
+        });
+
+        // Get visible rows
+        const rows = Array.from(
+          tbody.querySelectorAll('tr:not([style*="display: none"])')
+        );
+
+        rows.sort((a, b) => {
+          let aVal, bVal;
+          const aCells = a.querySelectorAll("td");
+          const bCells = b.querySelectorAll("td");
+
+          // Get values based on column
+          if (tableType === "users") {
+            switch (column) {
+              case "id":
+                aVal = parseInt(aCells[0]?.textContent);
+                bVal = parseInt(bCells[0]?.textContent);
+                break;
+              case "username":
+                aVal = aCells[1]?.textContent.trim().toLowerCase();
+                bVal = bCells[1]?.textContent.trim().toLowerCase();
+                break;
+              case "email":
+                aVal = aCells[2]?.textContent.trim().toLowerCase();
+                bVal = bCells[2]?.textContent.trim().toLowerCase();
+                break;
+              case "role":
+                aVal = aCells[3]?.textContent.trim().toLowerCase();
+                bVal = bCells[3]?.textContent.trim().toLowerCase();
+                break;
+              case "status":
+                aVal = aCells[4]?.textContent.trim().toLowerCase();
+                bVal = bCells[4]?.textContent.trim().toLowerCase();
+                break;
+              case "created":
+                aVal = new Date(aCells[5]?.textContent);
+                bVal = new Date(bCells[5]?.textContent);
+                break;
+              default:
+                return 0;
+            }
+          } else if (tableType === "documents") {
+            switch (column) {
+              case "id":
+                aVal = parseInt(aCells[0]?.textContent);
+                bVal = parseInt(bCells[0]?.textContent);
+                break;
+              case "filename":
+                aVal = aCells[1]?.textContent.trim().toLowerCase();
+                bVal = bCells[1]?.textContent.trim().toLowerCase();
+                break;
+              case "collection":
+                aVal = aCells[2]?.textContent.trim().toLowerCase();
+                bVal = bCells[2]?.textContent.trim().toLowerCase();
+                break;
+              case "uploaded_by":
+                aVal = aCells[3]?.textContent.trim().toLowerCase();
+                bVal = bCells[3]?.textContent.trim().toLowerCase();
+                break;
+              case "uploaded_at":
+                aVal = new Date(aCells[4]?.textContent);
+                bVal = new Date(bCells[4]?.textContent);
+                break;
+              default:
+                return 0;
+            }
+          } else if (tableType === "conversations") {
+            switch (column) {
+              case "id":
+                aVal = parseInt(aCells[0]?.textContent);
+                bVal = parseInt(bCells[0]?.textContent);
+                break;
+              case "user":
+                aVal = aCells[1]?.textContent.trim().toLowerCase();
+                bVal = bCells[1]?.textContent.trim().toLowerCase();
+                break;
+              case "title":
+                aVal = aCells[2]?.textContent.trim().toLowerCase();
+                bVal = bCells[2]?.textContent.trim().toLowerCase();
+                break;
+              case "collection":
+                aVal = aCells[3]?.textContent.trim().toLowerCase();
+                bVal = bCells[3]?.textContent.trim().toLowerCase();
+                break;
+              case "created":
+                aVal = new Date(aCells[4]?.textContent);
+                bVal = new Date(bCells[4]?.textContent);
+                break;
+              case "updated":
+                aVal = new Date(aCells[5]?.textContent);
+                bVal = new Date(bCells[5]?.textContent);
+                break;
+              default:
+                return 0;
+            }
+          } else if (tableType === "history") {
+            switch (column) {
+              case "id":
+                aVal = parseInt(aCells[0]?.textContent);
+                bVal = parseInt(bCells[0]?.textContent);
+                break;
+              case "user":
+                aVal = aCells[1]?.textContent.trim().toLowerCase();
+                bVal = bCells[1]?.textContent.trim().toLowerCase();
+                break;
+              case "conversation_id":
+                aVal =
+                  aCells[2]?.textContent.trim() === "N/A"
+                    ? 0
+                    : parseInt(aCells[2]?.textContent);
+                bVal =
+                  bCells[2]?.textContent.trim() === "N/A"
+                    ? 0
+                    : parseInt(bCells[2]?.textContent);
+                break;
+              case "collection":
+                aVal = aCells[4]?.textContent.trim().toLowerCase();
+                bVal = bCells[4]?.textContent.trim().toLowerCase();
+                break;
+              case "timestamp":
+                aVal = new Date(aCells[5]?.textContent);
+                bVal = new Date(bCells[5]?.textContent);
+                break;
+              default:
+                return 0;
+            }
+          }
+
+          // Compare values
+          if (aVal === bVal) return 0;
+          if (aVal < bVal) return isAsc ? -1 : 1;
+          return isAsc ? 1 : -1;
+        });
+
+        // Re-append sorted rows
+        rows.forEach((row) => tbody.appendChild(row));
       }
 
       function showAddUserModal() {
@@ -753,12 +1814,31 @@
       }
 
       // Edit Document
+      let originalCollection = "";
+
       function editDocument(docId, filename, collection) {
         document.getElementById("editDocumentId").value = docId;
         document.getElementById("editDocumentFilename").value = filename;
         document.getElementById("editDocumentCollection").value = collection;
+        originalCollection = collection;
+        // Auto-enable re-index if collection will change
         document.getElementById("reindexDocument").checked = false;
+        document.getElementById("reindexProgress").style.display = "none";
         document.getElementById("editDocumentModal").style.display = "flex";
+      }
+
+      function handleCollectionChange() {
+        const newCollection = document.getElementById(
+          "editDocumentCollection"
+        ).value;
+        const reindexCheckbox = document.getElementById("reindexDocument");
+
+        // Auto-check re-index if collection changed
+        if (newCollection !== originalCollection) {
+          reindexCheckbox.checked = true;
+        } else {
+          reindexCheckbox.checked = false;
+        }
       }
 
       document
@@ -767,12 +1847,55 @@
           e.preventDefault();
 
           const docId = document.getElementById("editDocumentId").value;
+          const newCollection = document.getElementById(
+            "editDocumentCollection"
+          ).value;
+          const reindex = document.getElementById("reindexDocument").checked;
           const documentData = {
             filename: document.getElementById("editDocumentFilename").value,
-            collection_name: document.getElementById("editDocumentCollection")
-              .value,
-            reindex: document.getElementById("reindexDocument").checked,
+            collection_name: newCollection,
+            reindex: reindex,
           };
+
+          const updateBtn = document.getElementById("updateDocumentBtn");
+          const progressDiv = document.getElementById("reindexProgress");
+          const progressFill = document.getElementById("reindexProgressFill");
+          const statusText = document.getElementById("reindexStatus");
+          const detailsText = document.getElementById("reindexDetails");
+
+          let progressInterval = null;
+
+          // Show progress if re-indexing
+          if (reindex && newCollection !== originalCollection) {
+            progressDiv.style.display = "block";
+            updateBtn.disabled = true;
+            updateBtn.textContent = "Processing...";
+
+            // Reset progress
+            progressFill.style.width = "0%";
+            statusText.textContent = "Re-indexing document...";
+            detailsText.textContent = "Preparing...";
+
+            // Simulate progress updates
+            let progress = 0;
+            progressInterval = setInterval(() => {
+              progress += Math.random() * 15;
+              if (progress > 90) progress = 90;
+              progressFill.style.width = progress + "%";
+
+              if (progress < 30) {
+                statusText.textContent = "Re-indexing document...";
+                detailsText.textContent = "Removing old chunks from ChromaDB";
+              } else if (progress < 60) {
+                statusText.textContent = "Re-indexing document...";
+                detailsText.textContent = "Processing document content";
+              } else if (progress < 90) {
+                statusText.textContent = "Re-indexing document...";
+                detailsText.textContent =
+                  "Creating embeddings and updating vector store";
+              }
+            }, 300);
+          }
 
           try {
             const response = await fetch(`/api/documents/${docId}`, {
@@ -785,14 +1908,52 @@
 
             const data = await response.json();
 
+            if (reindex && newCollection !== originalCollection) {
+              // Clear progress interval
+              if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+              }
+
+              // Complete progress
+              progressFill.style.width = "100%";
+              statusText.textContent = "Re-indexing complete!";
+              detailsText.textContent =
+                "Document successfully re-indexed in new collection";
+
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+
             if (response.ok) {
-              alert("Document updated successfully!");
+              if (reindex && newCollection !== originalCollection) {
+                alert("Document updated and re-indexed successfully!");
+              } else {
+                alert("Document updated successfully!");
+              }
               location.reload();
             } else {
+              if (reindex && newCollection !== originalCollection) {
+                if (progressInterval) {
+                  clearInterval(progressInterval);
+                  progressInterval = null;
+                }
+                progressDiv.style.display = "none";
+              }
+              updateBtn.disabled = false;
+              updateBtn.textContent = "Update Document";
               alert("Error: " + (data.error || "Failed to update document"));
             }
           } catch (error) {
-            alert("Error updating document");
+            if (reindex && newCollection !== originalCollection) {
+              if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+              }
+              progressDiv.style.display = "none";
+            }
+            updateBtn.disabled = false;
+            updateBtn.textContent = "Update Document";
+            alert("Error updating document: " + error.message);
           }
         });
 
@@ -829,6 +1990,121 @@
           event.target.style.display = "none";
         }
       };
+
+      // Mobile sidebar functions
+      function toggleMobileSidebar() {
+        const sidebar = document.querySelector(".sidebar");
+        const overlay = document.getElementById("mobileOverlay");
+
+        if (!sidebar) {
+          console.error("Sidebar element not found");
+          return;
+        }
+
+        if (window.innerWidth <= 768) {
+          const isOpening = !sidebar.classList.contains("open");
+
+          // Remove collapsed class on mobile to ensure full width
+          sidebar.classList.remove("collapsed");
+
+          // Toggle open class
+          sidebar.classList.toggle("open");
+
+          // Show/hide overlay
+          if (overlay) {
+            if (isOpening) {
+              overlay.classList.add("active");
+            } else {
+              overlay.classList.remove("active");
+            }
+          }
+
+          // Force sidebar to be visible
+          sidebar.style.display = "flex";
+          sidebar.style.visibility = "visible";
+          sidebar.style.opacity = "1";
+        }
+      }
+
+      function closeAllMobileSidebars() {
+        const sidebar = document.querySelector(".sidebar");
+        const overlay = document.getElementById("mobileOverlay");
+
+        if (sidebar) sidebar.classList.remove("open");
+        if (overlay) overlay.classList.remove("active");
+      }
+
+      // Update active state in mobile bottom nav
+      function updateMobileNavActive() {
+        const currentPath = window.location.pathname;
+        const navItems = document.querySelectorAll(".mobile-bottom-nav-item");
+        navItems.forEach((item) => {
+          item.classList.remove("active");
+          if (item.getAttribute("href") === currentPath) {
+            item.classList.add("active");
+          }
+        });
+      }
+
+      // Update mobile nav on page load
+      updateMobileNavActive();
+
+      // Prevent body scroll when sidebar is open on mobile
+      function updateBodyScroll() {
+        if (window.innerWidth <= 768) {
+          const sidebar = document.querySelector(".sidebar");
+          const isOpen = sidebar?.classList.contains("open");
+
+          if (isOpen) {
+            document.body.classList.add("sidebar-open");
+          } else {
+            document.body.classList.remove("sidebar-open");
+          }
+        } else {
+          document.body.classList.remove("sidebar-open");
+        }
+      }
+
+      // Watch for sidebar state changes
+      const sidebarObserver = new MutationObserver(updateBodyScroll);
+      const sidebar = document.querySelector(".sidebar");
+
+      if (sidebar) {
+        sidebarObserver.observe(sidebar, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
+
+      // Desktop sidebar toggle
+      function toggleSidebar() {
+        const sidebar = document.querySelector(".sidebar");
+        if (!sidebar) return;
+
+        // Mobile handling
+        if (window.innerWidth <= 768) {
+          toggleMobileSidebar();
+          return;
+        }
+
+        // Desktop handling
+        sidebar.classList.toggle("collapsed");
+        const isCollapsed = sidebar.classList.contains("collapsed");
+        localStorage.setItem("sidebarCollapsed", isCollapsed);
+      }
+
+      // Close sidebar when clicking on nav menu items on mobile
+      if (window.innerWidth <= 768) {
+        const navMenuLinks = document.querySelectorAll(".nav-menu a");
+        navMenuLinks.forEach((link) => {
+          link.addEventListener("click", () => {
+            // Close sidebar after a short delay to allow navigation
+            setTimeout(() => {
+              closeAllMobileSidebars();
+            }, 100);
+          });
+        });
+      }
     </script>
   </body>
 </html>

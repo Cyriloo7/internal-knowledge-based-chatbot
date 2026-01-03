@@ -2,17 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="benbot" />
+    <meta
+      name="description"
+      content="Intelligent document Q&A with AI-powered search and retrieval"
+    />
 
-    <title>Chat - RAG Chatbot</title>
+    <title>Chat - benbot</title>
     <link
       rel="icon"
       type="image/svg+xml"
       href="{{ url_for('static', filename='icons/favicon.svg') }}"
     />
     <link
+      rel="manifest"
+      href="{{ url_for('static', filename='manifest.json') }}"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="{{ url_for('static', filename='icons/icon-192x192.png') }}"
+    />
+    <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
+      href="{% if config.CDN_DOMAIN and config.USE_CDN %}{{ config.CDN_DOMAIN }}/static/css/style.css{% else %}{{ url_for('static', filename='css/style.css') }}{% endif %}"
     />
   </head>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -20,37 +39,87 @@
     <div class="app-container">
       <nav class="sidebar">
         <div class="sidebar-header">
-          <div class="logo-small" , style="width: 60px; height: 60px">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-              <rect x="2" y="28" width="6" height="12" rx="2" fill="#546E7A" />
-              <rect x="56" y="28" width="6" height="12" rx="2" fill="#546E7A" />
+          <div class="sidebar-header-content">
+            <div class="logo-small" , style="width: 60px; height: 60px">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+                <rect
+                  x="2"
+                  y="28"
+                  width="6"
+                  height="12"
+                  rx="2"
+                  fill="#546E7A"
+                />
+                <rect
+                  x="56"
+                  y="28"
+                  width="6"
+                  height="12"
+                  rx="2"
+                  fill="#546E7A"
+                />
 
-              <rect x="6" y="10" width="52" height="46" rx="8" fill="#78909C" />
+                <rect
+                  x="6"
+                  y="10"
+                  width="52"
+                  height="46"
+                  rx="8"
+                  fill="#78909C"
+                />
 
-              <rect x="28" y="4" width="8" height="6" fill="#546E7A" />
-              <circle cx="32" cy="4" r="4" fill="#EF5350" />
+                <rect x="28" y="4" width="8" height="6" fill="#546E7A" />
+                <circle cx="32" cy="4" r="4" fill="#EF5350" />
 
-              <rect
-                x="12"
-                y="20"
-                width="40"
-                height="18"
-                rx="4"
-                fill="#263238"
-              />
+                <rect
+                  x="12"
+                  y="20"
+                  width="40"
+                  height="18"
+                  rx="4"
+                  fill="#263238"
+                />
 
-              <circle cx="24" cy="29" r="5" fill="#FFCA28" />
-              <circle cx="40" cy="29" r="5" fill="#FFCA28" />
+                <circle cx="24" cy="29" r="5" fill="#FFCA28" />
+                <circle cx="40" cy="29" r="5" fill="#FFCA28" />
 
-              <rect x="20" y="44" width="24" height="6" rx="1" fill="#263238" />
-            </svg>
+                <rect
+                  x="20"
+                  y="44"
+                  width="24"
+                  height="6"
+                  rx="1"
+                  fill="#263238"
+                />
+              </svg>
+            </div>
+            <h2>benbot</h2>
           </div>
-          <h2>RAG Assistant</h2>
+          <button
+            class="sidebar-toggle-btn"
+            id="sidebarToggle"
+            onclick="toggleSidebar()"
+            title="Toggle sidebar"
+          >
+            <svg
+              id="sidebarToggleIcon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
         <ul class="nav-menu">
           <li>
-            <a href="/dashboard">
+            <a href="/dashboard" title="Dashboard">
               <svg
                 width="20"
                 height="20"
@@ -64,11 +133,11 @@
                 <rect x="14" y="14" width="7" height="7"></rect>
                 <rect x="3" y="14" width="7" height="7"></rect>
               </svg>
-              Dashboard
+              <span>Dashboard</span>
             </a>
           </li>
           <li class="active">
-            <a href="/chat">
+            <a href="/chat" title="Chat">
               <svg
                 width="20"
                 height="20"
@@ -81,12 +150,16 @@
                   d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
                 ></path>
               </svg>
-              Chat
+              <span>Chat</span>
             </a>
           </li>
           {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
           <li>
-            <a href="#" onclick="showUploadModal(); return false;">
+            <a
+              href="#"
+              onclick="showUploadModal(); return false;"
+              title="Upload Documents"
+            >
               <svg
                 width="20"
                 height="20"
@@ -99,12 +172,12 @@
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
-              Upload Documents
+              <span>Upload Documents</span>
             </a>
           </li>
           {% endif %} {% if user.role == 'admin' %}
           <li>
-            <a href="/admin">
+            <a href="/admin" title="Admin Panel">
               <svg
                 width="20"
                 height="20"
@@ -115,45 +188,89 @@
               >
                 <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
               </svg>
-              Admin Panel
+              <span>Admin Panel</span>
             </a>
           </li>
           {% endif %}
         </ul>
 
         <div class="sidebar-footer">
-          <div class="user-info">
-            <div class="avatar">{{ user.username[0].upper() }}</div>
-            <div>
-              <div class="user-name">{{ user.username }}</div>
-              <div class="user-role">{{ user.role }}</div>
-            </div>
-          </div>
-          <a href="/logout" class="btn-logout">Logout</a>
-        </div>
-      </nav>
-
-      <!-- Conversations Sidebar -->
-      <aside class="conversations-sidebar" id="conversationsSidebar">
-        <div class="conversations-header">
-          <h3>Conversations</h3>
           <button
-            class="btn-new-conversation"
-            id="newConversationBtn"
-            title="New Conversation"
+            class="theme-toggle"
+            id="themeToggle"
+            onclick="toggleTheme()"
+            title="Toggle theme"
           >
             <svg
-              width="20"
-              height="20"
+              id="themeIcon"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               stroke-width="2"
             >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
           </button>
+        </div>
+      </nav>
+
+      <!-- Mobile Overlay -->
+      <div
+        class="mobile-overlay"
+        id="mobileOverlay"
+        onclick="closeAllMobileSidebars()"
+      ></div>
+
+      <!-- Conversations Sidebar -->
+      <aside class="conversations-sidebar" id="conversationsSidebar">
+        <div class="conversations-header">
+          <div class="conversations-header-content">
+            <h3>Conversations</h3>
+            <button
+              class="btn-new-conversation"
+              id="newConversationBtn"
+              title="New Conversation (Ctrl+N)"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <button
+              class="btn-help"
+              id="helpBtnSidebar"
+              title="Help & Shortcuts (?)"
+              onclick="showHelpModal()"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="conversations-list" id="conversationsList">
           <!-- Conversations will be loaded here -->
@@ -169,24 +286,117 @@
               <span>Ready</span>
             </div>
           </div>
-          <div class="collection-selector">
-            <label for="collection">Collection:</label>
-            <select id="collection">
-              {% for level in collections %}
-              <option value="{{ level }}">
-                {% if level == 'level-1' %}Level 1 (General) {% elif level ==
-                'level-2' %}Level 2 (Team) {% elif level == 'level-3' %}Level 3
-                (Department) {% elif level == 'level-4' %}Level 4 (Organization)
-                {% endif %}
-              </option>
-              {% endfor %}
-            </select>
+          <div class="chat-header-right">
+            <div class="global-search-container">
+              <input
+                type="text"
+                id="globalSearch"
+                placeholder="Search conversations and documents... (Ctrl+K)"
+                class="global-search-input"
+              />
+              <svg
+                class="search-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <div class="search-results-dropdown" id="searchResults"></div>
+            </div>
+            <div class="collection-selector">
+              <label for="collection">Collection:</label>
+              <select id="collection">
+                {% for level in collections %}
+                <option value="{{ level }}">
+                  {% if level == 'level-1' %}Level 1 (General) {% elif level ==
+                  'level-2' %}Level 2 (Team) {% elif level == 'level-3' %}Level
+                  3 (Department) {% elif level == 'level-4' %}Level 4
+                  (Organization) {% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="account-menu-container">
+              <button
+                class="account-menu-btn"
+                id="accountMenuBtn"
+                onclick="toggleAccountMenu()"
+              >
+                <div class="avatar-small">{{ user.username[0].upper() }}</div>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="account-menu-dropdown" id="accountMenuDropdown">
+                <div class="account-menu-header">
+                  <div class="avatar">{{ user.username[0].upper() }}</div>
+                  <div>
+                    <div class="user-name">{{ user.username }}</div>
+                    <div class="user-email">{{ user.email }}</div>
+                    <div class="user-role-badge">{{ user.role }}</div>
+                  </div>
+                </div>
+                <div class="account-menu-divider"></div>
+                <button class="account-menu-item" onclick="showSettingsModal()">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                      d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"
+                    ></path>
+                  </svg>
+                  <span>Settings</span>
+                </button>
+                <button
+                  class="account-menu-item"
+                  onclick="window.location.href='/logout'"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="chat-messages" id="chatMessages">
-          <div id="historySection"></div>
-          <div id="newSection">
+          <!-- Previous Conversation Messages Section -->
+          <div
+            id="historySection"
+            class="message-section history-section"
+          ></div>
+
+          <!-- New Conversation Messages Section -->
+          <div id="newSection" class="message-section new-section">
             <div class="message-system" id="welcomeMessage">
               <svg width="40" height="40" viewBox="0 0 60 60" fill="none">
                 <rect width="60" height="60" rx="12" fill="#EEF2FF" />
@@ -199,7 +409,7 @@
                 <circle cx="30" cy="30" r="8" fill="#4F46E5" />
               </svg>
               <div>
-                <p><strong>Welcome to RAG Assistant!</strong></p>
+                <p><strong>Welcome to benbot!</strong></p>
                 <p>
                   I can help you find information from your indexed documents.
                   Ask me anything about the documents you have access to.
@@ -215,12 +425,47 @@
 
         <div class="chat-input-container">
           <form id="chatForm">
+            <div class="model-selector-inline" id="inlineModelSelector">
+              <select id="inlineModelSelect" title="Select AI Model">
+                <optgroup label="Google (Gemini)" id="inlineGeminiModels">
+                  <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                  <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
+                </optgroup>
+                <optgroup label="OpenAI (ChatGPT)" id="inlineOpenaiModels">
+                  <option value="gpt-5">GPT-5 (Latest)</option>
+                  <option value="gpt-5.2">GPT-5.2</option>
+                </optgroup>
+                <optgroup label="Anthropic (Claude)" id="inlineAnthropicModels">
+                  <option value="claude-sonnet-4-5">
+                    Claude Sonnet 4.5 (Latest)
+                  </option>
+                  <option value="claude-opus-4-5">Claude Opus 4.5</option>
+                </optgroup>
+              </select>
+            </div>
             <textarea
               id="messageInput"
               placeholder="Ask a question about your documents..."
               rows="1"
               required
             ></textarea>
+            <button
+              type="button"
+              id="stopButton"
+              style="display: none"
+              title="Stop response"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+              </svg>
+            </button>
             <button type="submit" id="sendButton">
               <svg
                 width="20"
@@ -237,23 +482,242 @@
           </form>
         </div>
       </main>
+
+      <!-- Mobile Bottom Navigation -->
+      <nav class="mobile-bottom-nav">
+        <a
+          href="/dashboard"
+          class="mobile-bottom-nav-item"
+          id="mobileNavDashboard"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a
+          href="/chat"
+          class="mobile-bottom-nav-item active"
+          id="mobileNavChat"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+          <span>Chat</span>
+        </a>
+        <button
+          class="mobile-bottom-nav-item"
+          id="mobileNavMenu"
+          onclick="toggleMobileSidebar()"
+          style="border: none; background: none; cursor: pointer; width: 100%"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+          <span>Menu</span>
+        </button>
+        {% if user.role == 'admin' %}
+        <a href="/admin" class="mobile-bottom-nav-item" id="mobileNavAdmin">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+          <span>Admin</span>
+        </a>
+        {% endif %}
+      </nav>
+
+      <!-- Mobile FAB for New Conversation -->
+      <button
+        class="mobile-fab"
+        id="mobileNewConversationFab"
+        onclick="createNewConversation()"
+        title="New Conversation"
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
     </div>
 
-    <!-- Upload Modal -->
-    {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
-    <div id="uploadModal" class="modal">
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
       <div class="modal-content">
-        <span class="modal-close" onclick="closeUploadModal()">&times;</span>
-        <h2>Upload Document</h2>
-        <form id="uploadForm" enctype="multipart/form-data">
+        <span class="modal-close" onclick="closeSettingsModal()">&times;</span>
+        <h2>Settings</h2>
+        <div class="settings-tabs">
+          <button class="settings-tab active" data-tab="ai">AI Settings</button>
+          <button class="settings-tab" data-tab="account">Account</button>
+          <button class="settings-tab" data-tab="password">Password</button>
+        </div>
+
+        <div id="aiTab" class="settings-tab-content active">
+          <form id="aiSettingsForm">
+            <div class="form-group">
+              <label for="aiModel">AI Model</label>
+              <select id="aiModel" required>
+                <optgroup label="Google Gemini" id="geminiModels">
+                  <option value="gemini-3-pro-preview">
+                    Gemini 3 Pro (Preview)
+                  </option>
+                  <option value="gemini-2.0-flash-exp">
+                    Gemini 2.0 Flash (Experimental)
+                  </option>
+                </optgroup>
+                <optgroup label="OpenAI (ChatGPT)" id="openaiModels">
+                  <option value="gpt-5">GPT-5 (Latest)</option>
+                  <option value="gpt-5.2">GPT-5.2</option>
+                </optgroup>
+                <optgroup label="Anthropic (Claude)" id="anthropicModels">
+                  <option value="claude-sonnet-4-5">
+                    Claude Sonnet 4.5 (Latest)
+                  </option>
+                  <option value="claude-opus-4-5">Claude Opus 4.5</option>
+                </optgroup>
+              </select>
+              <div
+                id="apiKeyStatus"
+                style="margin-top: 8px; font-size: 13px; min-height: 20px"
+              ></div>
+              <small
+                style="
+                  color: var(--text-light);
+                  font-size: 13px;
+                  margin-top: 4px;
+                  display: block;
+                "
+              >
+                Choose the AI model for generating responses. Pro models are
+                more capable but slower.
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="maxContextMessages">
+                Max Context Messages: <span id="contextMessagesValue">20</span>
+              </label>
+              <input
+                type="range"
+                id="maxContextMessages"
+                min="5"
+                max="50"
+                step="5"
+                value="20"
+                style="width: 100%"
+              />
+              <small
+                style="
+                  color: var(--text-light);
+                  font-size: 13px;
+                  margin-top: 4px;
+                  display: block;
+                "
+              >
+                Maximum number of previous messages to include in context.
+                Higher values use more tokens but provide better context.
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="contextStrategy">Context Management Strategy</label>
+              <select id="contextStrategy" required>
+                <option value="truncate">Truncate (Remove Old Messages)</option>
+                <option value="summarize">
+                  Summarize (Summarize Old Messages)
+                </option>
+              </select>
+              <small
+                style="
+                  color: var(--text-light);
+                  font-size: 13px;
+                  margin-top: 4px;
+                  display: block;
+                "
+              >
+                How to handle conversations that exceed the context limit.
+                Truncate removes old messages, Summarize condenses them.
+              </small>
+            </div>
+            <div
+              id="aiSettingsError"
+              class="error-message"
+              style="display: none"
+            ></div>
+            <div
+              id="aiSettingsSuccess"
+              class="success-message"
+              style="display: none"
+            ></div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Save AI Settings
+            </button>
+          </form>
+        </div>
+
+        <div id="accountTab" class="settings-tab-content">
           <div class="form-group">
-            <label for="pdfFile">Select Document (PDF, DOCX, PPT, TXT)</label>
+            <label>Username</label>
+            <input type="text" value="{{ user.username }}" disabled />
+            <small
+              style="
+                color: var(--text-light);
+                font-size: 13px;
+                margin-top: 4px;
+                display: block;
+              "
+            >
+              Username cannot be changed
+            </small>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
             <input
-              type="file"
-              id="pdfFile"
-              name="file"
-              accept=".pdf,.docx,.doc,.ppt,.pptx,.txt"
-              required
+              type="email"
+              id="userEmail"
+              value="{{ user.email }}"
+              disabled
             />
             <small
               style="
@@ -263,8 +727,223 @@
                 display: block;
               "
             >
-              Supported formats: PDF, DOCX, PPT, PPTX, TXT
+              Email cannot be changed
             </small>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <input type="text" value="{{ user.role }}" disabled />
+          </div>
+        </div>
+
+        <div id="passwordTab" class="settings-tab-content">
+          <form id="passwordResetForm">
+            <div class="form-group">
+              <label for="currentPassword">Current Password</label>
+              <input type="password" id="currentPassword" required />
+            </div>
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input type="password" id="newPassword" required minlength="6" />
+              <small
+                style="
+                  color: var(--text-light);
+                  font-size: 13px;
+                  margin-top: 4px;
+                  display: block;
+                "
+              >
+                Password must be at least 6 characters long
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Confirm New Password</label>
+              <input type="password" id="confirmPassword" required />
+            </div>
+            <div
+              id="passwordResetError"
+              class="error-message"
+              style="display: none"
+            ></div>
+            <div
+              id="passwordResetSuccess"
+              class="success-message"
+              style="display: none"
+            ></div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Change Password
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Citation Details Modal -->
+    <div id="citationDetailsModal" class="modal">
+      <div class="modal-content" style="max-width: 600px">
+        <span class="modal-close" onclick="closeCitationDetailsModal()"
+          >&times;</span
+        >
+        <h2>Document Details</h2>
+        <div id="citationDetailsContent" class="citation-details-content">
+          <!-- Content will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+      <div class="modal-content modal-large">
+        <span class="modal-close" onclick="closeHelpModal()">&times;</span>
+        <h2>Keyboard Shortcuts & Help</h2>
+        <div class="help-content">
+          <div class="help-section">
+            <h3>Keyboard Shortcuts</h3>
+            <div class="shortcut-list">
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>K</kbd> or <kbd>Cmd</kbd> + <kbd>K</kbd>
+                <span>Focus global search</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Ctrl</kbd> + <kbd>N</kbd> or <kbd>Cmd</kbd> + <kbd>N</kbd>
+                <span>New conversation</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>?</kbd>
+                <span>Show this help dialog</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Esc</kbd>
+                <span>Close modals and dialogs</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Shift</kbd> + <kbd>Enter</kbd>
+                <span>New line in message input</span>
+              </div>
+              <div class="shortcut-item">
+                <kbd>Enter</kbd>
+                <span>Send message</span>
+              </div>
+            </div>
+          </div>
+          <div class="help-section">
+            <h3>Conversation Features</h3>
+            <ul>
+              <li>
+                <strong>Rename:</strong> Click the rename icon or double-click
+                the conversation title to rename
+              </li>
+              <li>
+                <strong>Export:</strong> Click the export icon to download
+                conversation as Markdown
+              </li>
+              <li>
+                <strong>Delete:</strong> Click the delete icon or swipe left on
+                mobile to delete
+              </li>
+              <li>
+                <strong>New Conversation:</strong> Click the + button in the
+                conversations header
+              </li>
+            </ul>
+          </div>
+          <div class="help-section">
+            <h3>Chat Features</h3>
+            <ul>
+              <li>
+                <strong>Global Search:</strong> Search across all conversations
+                and documents using Ctrl+K
+              </li>
+              <li>
+                <strong>Model Selection:</strong> Choose AI model from the
+                dropdown next to the input
+              </li>
+              <li>
+                <strong>Citations:</strong> View source citations in AI
+                responses (click citation numbers)
+              </li>
+              <li>
+                <strong>Copy Response:</strong> Click the copy button (📋) on
+                any AI response
+              </li>
+              <li>
+                <strong>Collection Levels:</strong> Use the collection selector
+                to switch document access levels
+              </li>
+            </ul>
+          </div>
+          <div class="help-section">
+            <h3>Tips & Tricks</h3>
+            <ul>
+              <li>Double-click conversation titles to quickly rename them</li>
+              <li>
+                Hover over conversation items to see action buttons (export,
+                rename, delete)
+              </li>
+              <li>Use Shift+Enter for new lines in messages without sending</li>
+              <li>Press ? anywhere to open this help dialog</li>
+              <li>Export conversations to save important discussions</li>
+              <li>Switch between different AI models to compare responses</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Modal -->
+    {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <span class="modal-close" onclick="closeUploadModal()">&times;</span>
+        <h2>Upload Documents</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="pdfFile">Select Documents (PDF, DOCX, PPT, TXT)</label>
+
+            <!-- Drag & Drop Zone -->
+            <div class="drag-drop-zone" id="dragDropZone">
+              <div class="drag-drop-zone-icon">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <div class="drag-drop-zone-text">Drag and drop files here</div>
+              <div class="drag-drop-zone-hint">or click to browse</div>
+            </div>
+
+            <input
+              type="file"
+              id="pdfFile"
+              name="file"
+              accept=".pdf,.docx,.doc,.ppt,.pptx,.txt"
+              multiple
+              required
+              style="display: none"
+            />
+            <small
+              style="
+                color: var(--text-light);
+                font-size: 13px;
+                margin-top: 8px;
+                display: block;
+              "
+            >
+              Supported formats: PDF, DOCX, PPT, PPTX, TXT. You can select
+              multiple files at once.
+            </small>
+            <div
+              id="fileList"
+              style="margin-top: 10px; max-height: 150px; overflow-y: auto"
+            ></div>
           </div>
           <div class="form-group">
             <label for="collectionName">Collection Name</label>
@@ -279,6 +958,22 @@
               <option value="level-4">Level 4 (Organization)</option>
               {% endif %}
             </select>
+          </div>
+          <div class="form-group">
+            <label for="categorySelect">Category (Optional)</label>
+            <div style="display: flex; gap: 8px">
+              <select id="categorySelect" name="category_id" style="flex: 1">
+                <option value="">No Category</option>
+              </select>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="showCategoryModal()"
+                style="white-space: nowrap"
+              >
+                Manage Categories
+              </button>
+            </div>
           </div>
           <div id="uploadProgress" style="display: none">
             <div class="status-indicator">
@@ -300,25 +995,615 @@
         </form>
       </div>
     </div>
+
+    <!-- Category Management Modal -->
+    <div id="categoryModal" class="modal">
+      <div class="modal-content" style="max-width: 600px">
+        <span class="modal-close" onclick="closeCategoryModal()">&times;</span>
+        <h2>Manage Categories</h2>
+        <div style="margin-bottom: 20px">
+          <button
+            type="button"
+            class="btn btn-primary"
+            onclick="showCreateCategoryForm()"
+          >
+            + Create New Category
+          </button>
+        </div>
+        <div
+          id="categoriesList"
+          style="max-height: 400px; overflow-y: auto"
+        ></div>
+        <div
+          id="createCategoryForm"
+          style="
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+          "
+        >
+          <h3>Create Category</h3>
+          <div class="form-group">
+            <label for="categoryName">Category Name *</label>
+            <input
+              type="text"
+              id="categoryName"
+              required
+              style="
+                width: 100%;
+                padding: 8px;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+              "
+            />
+          </div>
+          <div class="form-group">
+            <label for="categoryDescription">Description</label>
+            <textarea
+              id="categoryDescription"
+              rows="3"
+              style="
+                width: 100%;
+                padding: 8px;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+              "
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="categoryColor">Color</label>
+            <input
+              type="color"
+              id="categoryColor"
+              value="#4F46E5"
+              style="
+                width: 100px;
+                height: 40px;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+              "
+            />
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 15px">
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="createCategory()"
+            >
+              Create
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="hideCreateCategoryForm()"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     {% endif %}
 
     <script>
+      // Theme Management
+      function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+      }
+
+      function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+      }
+
+      function updateThemeIcon(theme) {
+        const icon = document.getElementById('themeIcon');
+        if (!icon) return;
+
+        if (theme === 'dark') {
+          icon.innerHTML = `
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          `;
+        } else {
+          icon.innerHTML = `
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          `;
+        }
+      }
+
+      // Initialize theme on page load
+      initTheme();
+
+      // Sidebar Toggle Management
+      function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        if (!sidebar) return;
+
+        // Mobile handling
+        if (window.innerWidth <= 768) {
+          toggleMobileSidebar();
+          return;
+        }
+
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+        updateSidebarToggleIcon(isCollapsed);
+      }
+
+      function updateSidebarToggleIcon(isCollapsed) {
+        // Hamburger icon stays the same, no need to change
+        // The visual state is handled by CSS transforms
+      }
+
+      // Initialize sidebar on page load
+      function initSidebar() {
+        const savedState = localStorage.getItem('sidebarCollapsed');
+        const sidebar = document.querySelector('.sidebar');
+        if (savedState === 'true' && sidebar) {
+          sidebar.classList.add('collapsed');
+          updateSidebarToggleIcon(true);
+        } else {
+          updateSidebarToggleIcon(false);
+        }
+      }
+
+      initSidebar();
+
+      // Conversations sidebar is now always visible (no toggle)
+
+      // Account Menu Toggle
+      function toggleAccountMenu() {
+        const dropdown = document.getElementById('accountMenuDropdown');
+        dropdown.classList.toggle('active');
+      }
+
+      // Close account menu when clicking outside
+      document.addEventListener('click', function(event) {
+        const accountMenuBtn = document.getElementById('accountMenuBtn');
+        const accountMenuDropdown = document.getElementById('accountMenuDropdown');
+
+        if (accountMenuBtn && accountMenuDropdown &&
+            !accountMenuBtn.contains(event.target) &&
+            !accountMenuDropdown.contains(event.target)) {
+          accountMenuDropdown.classList.remove('active');
+        }
+      });
+
+      // Settings Modal
+      function showSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'flex';
+        document.getElementById('accountMenuDropdown').classList.remove('active');
+        switchSettingsTab('ai');
+        loadAISettings();
+      }
+
+      function closeSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'none';
+        document.getElementById('passwordResetForm').reset();
+        document.getElementById('passwordResetError').style.display = 'none';
+        document.getElementById('passwordResetSuccess').style.display = 'none';
+      }
+
+      function switchSettingsTab(tab) {
+        // Update tab buttons
+        document.querySelectorAll('.settings-tab').forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.getAttribute('data-tab') === tab) {
+            btn.classList.add('active');
+          }
+        });
+
+        // Update tab content
+        document.querySelectorAll('.settings-tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById(tab + 'Tab').classList.add('active');
+      }
+
+      // Settings tab click handlers
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+          tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            switchSettingsTab(tabName);
+          });
+        });
+      });
+
+      // Password Reset Form Handler
+      document.getElementById('passwordResetForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const errorDiv = document.getElementById('passwordResetError');
+        const successDiv = document.getElementById('passwordResetSuccess');
+
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+
+        // Validate passwords match
+        if (newPassword !== confirmPassword) {
+          errorDiv.textContent = 'New passwords do not match';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        // Validate password length
+        if (newPassword.length < 6) {
+          errorDiv.textContent = 'Password must be at least 6 characters long';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/reset-password', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              current_password: currentPassword,
+              new_password: newPassword
+            })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            successDiv.textContent = 'Password changed successfully!';
+            successDiv.style.display = 'block';
+            document.getElementById('passwordResetForm').reset();
+            setTimeout(() => {
+              closeSettingsModal();
+            }, 2000);
+          } else {
+            errorDiv.textContent = data.error || 'Failed to change password';
+            errorDiv.style.display = 'block';
+          }
+        } catch (error) {
+          errorDiv.textContent = 'Network error. Please try again.';
+          errorDiv.style.display = 'block';
+        }
+      });
+
+      // Close modals when clicking outside
+      window.onclick = function(event) {
+        const uploadModal = document.getElementById('uploadModal');
+        const settingsModal = document.getElementById('settingsModal');
+
+        if (event.target == uploadModal) {
+          closeUploadModal();
+        }
+        if (event.target == settingsModal) {
+          closeSettingsModal();
+        }
+      }
+
       const chatMessages = document.getElementById('chatMessages');
       const chatForm = document.getElementById('chatForm');
       const messageInput = document.getElementById('messageInput');
       const sendButton = document.getElementById('sendButton');
+      const stopButton = document.getElementById('stopButton');
       const collectionSelect = document.getElementById('collection');
       const conversationsList = document.getElementById('conversationsList');
       const newConversationBtn = document.getElementById('newConversationBtn');
 
       let currentConversationId = {% if current_conversation_id %}{{ current_conversation_id }}{% else %}null{% endif %};
       let isFirstMessage = !currentConversationId;
+      let abortController = null;
+
+      // AI Settings
+      let currentAISettings = {
+        ai_model: 'gemini-3-pro-preview',
+        temperature: 0.5,
+        max_context_messages: 20,
+        context_strategy: 'truncate'
+      };
+
+      async function loadAISettings() {
+        try {
+          const response = await fetch('/api/settings/ai');
+          const data = await response.json();
+          if (response.ok) {
+            currentAISettings = {
+              ai_model: data.ai_model,
+              temperature: data.temperature,
+              max_context_messages: data.max_context_messages,
+              context_strategy: data.context_strategy
+            };
+            const aiModelSelect = document.getElementById('aiModel');
+            const maxContextSlider = document.getElementById('maxContextMessages');
+            const contextValue = document.getElementById('contextMessagesValue');
+            const contextStrategy = document.getElementById('contextStrategy');
+            const apiKeyStatus = document.getElementById('apiKeyStatus');
+
+            if (aiModelSelect) {
+              aiModelSelect.value = data.ai_model;
+              if (data.api_keys) {
+                updateModelAvailability(data.api_keys);
+              }
+            }
+
+            // Update inline model selector
+            const inlineModelSelect = document.getElementById('inlineModelSelect');
+            if (inlineModelSelect) {
+              inlineModelSelect.value = data.ai_model;
+              // Update inline model availability
+              if (data.api_keys) {
+                updateInlineModelAvailability(data.api_keys);
+              }
+            }
+
+            if (maxContextSlider) {
+              maxContextSlider.value = data.max_context_messages;
+              if (contextValue) contextValue.textContent = data.max_context_messages;
+            }
+            if (contextStrategy) contextStrategy.value = data.context_strategy;
+
+            // Update API key status
+            if (apiKeyStatus && data.api_keys) {
+              updateAPIKeyStatus(data.api_keys, data.ai_model);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load AI settings:', error);
+        }
+      }
+
+      function updateModelAvailability(apiKeys) {
+        const geminiGroup = document.getElementById('geminiModels');
+        const openaiGroup = document.getElementById('openaiModels');
+        const anthropicGroup = document.getElementById('anthropicModels');
+
+        // Update Gemini models
+        if (geminiGroup) {
+          const geminiOptions = geminiGroup.querySelectorAll('option');
+          geminiOptions.forEach(opt => {
+            if (!apiKeys.google) {
+              opt.disabled = true;
+              const originalText = opt.textContent.split(' (API key')[0];
+              opt.textContent = originalText + ' (API key not configured)';
+            } else {
+              opt.disabled = false;
+              const originalText = opt.textContent.split(' (API key')[0];
+              opt.textContent = originalText;
+            }
+          });
+        }
+
+        // Update OpenAI models
+        if (openaiGroup) {
+          const openaiOptions = openaiGroup.querySelectorAll('option');
+          openaiOptions.forEach(opt => {
+            if (!apiKeys.openai) {
+              opt.disabled = true;
+              const originalText = opt.textContent.split(' (API key')[0];
+              opt.textContent = originalText + ' (API key not configured)';
+            } else {
+              opt.disabled = false;
+              const originalText = opt.textContent.split(' (API key')[0];
+              opt.textContent = originalText;
+            }
+          });
+        }
+
+        // Update Anthropic models
+        if (anthropicGroup) {
+          const anthropicOptions = anthropicGroup.querySelectorAll('option');
+          anthropicOptions.forEach(opt => {
+            if (!apiKeys.anthropic) {
+              opt.disabled = true;
+              const originalText = opt.textContent.split(' (API key')[0];
+              opt.textContent = originalText + ' (API key not configured)';
+            } else {
+              opt.disabled = false;
+              const originalText = opt.textContent.split(' (API key')[0];
+              opt.textContent = originalText;
+            }
+          });
+        }
+      }
+
+      function updateAPIKeyStatus(apiKeys, currentModel) {
+        const statusDiv = document.getElementById('apiKeyStatus');
+        if (!statusDiv) return;
+
+        let hasKey = false;
+        let provider = '';
+        let envVarName = '';
+
+        if (currentModel.startsWith('gpt-') || currentModel.startsWith('o1-') || currentModel.startsWith('o3-')) {
+          hasKey = apiKeys.openai;
+          provider = 'OpenAI';
+          envVarName = 'OPENAI_API_KEY';
+        } else if (currentModel.startsWith('claude-') || currentModel.startsWith('sonnet-') || currentModel.startsWith('opus-') || currentModel.startsWith('haiku-')) {
+          hasKey = apiKeys.anthropic;
+          provider = 'Anthropic';
+          envVarName = 'ANTHROPIC_API_KEY';
+        } else {
+          hasKey = apiKeys.google;
+          provider = 'Google';
+          envVarName = 'GOOGLE_API_KEY';
+        }
+
+        if (hasKey) {
+          statusDiv.innerHTML = `<span style="color: var(--secondary);">✓ ${provider} API key configured</span>`;
+        } else {
+          statusDiv.innerHTML = `<span style="color: var(--danger);">⚠ ${provider} API key not found in .env file. Please add ${envVarName} to use this model.</span>`;
+        }
+      }
+
+      // Sync inline model selector with settings model selector
+      function syncModelSelectors() {
+        const settingsModelSelect = document.getElementById('aiModel');
+        const inlineModelSelect = document.getElementById('inlineModelSelect');
+
+        if (settingsModelSelect && inlineModelSelect) {
+          // Sync settings to inline
+          inlineModelSelect.value = settingsModelSelect.value;
+
+          // Sync inline to settings
+          inlineModelSelect.addEventListener('change', function(e) {
+            settingsModelSelect.value = e.target.value;
+            settingsModelSelect.dispatchEvent(new Event('change'));
+          });
+
+          // Sync settings to inline when changed
+          settingsModelSelect.addEventListener('change', function(e) {
+            inlineModelSelect.value = e.target.value;
+          });
+        }
+      }
+
+      // AI model change event listener
+      document.addEventListener('DOMContentLoaded', function() {
+        const aiModelSelect = document.getElementById('aiModel');
+        const inlineModelSelect = document.getElementById('inlineModelSelect');
+
+        // Sync model selectors
+        syncModelSelectors();
+
+        // Function to handle model change
+        async function handleModelChange(selectedModel, source) {
+          // console.log(`Model changed to: ${selectedModel} (from ${source})`);
+          currentAISettings.ai_model = selectedModel;
+
+          // Sync both selectors
+          if (aiModelSelect) aiModelSelect.value = selectedModel;
+          if (inlineModelSelect) inlineModelSelect.value = selectedModel;
+
+          // Auto-save the model selection
+          try {
+            const saveResponse = await fetch('/api/settings/ai', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ai_model: selectedModel,
+                temperature: currentAISettings.temperature,
+                max_context_messages: currentAISettings.max_context_messages,
+                context_strategy: currentAISettings.context_strategy
+              })
+            });
+
+            if (saveResponse.ok) {
+              // console.log('Model saved successfully:', selectedModel);
+            } else {
+              console.error('Failed to save model:', await saveResponse.text());
+            }
+          } catch (error) {
+            console.error('Error saving model:', error);
+          }
+
+          // Reload settings to get updated API key status
+          const response = await fetch('/api/settings/ai');
+          const data = await response.json();
+          if (response.ok && data.api_keys) {
+            updateAPIKeyStatus(data.api_keys, selectedModel);
+            updateModelAvailability(data.api_keys);
+            updateInlineModelAvailability(data.api_keys);
+          }
+        }
+
+        if (aiModelSelect) {
+          aiModelSelect.addEventListener('change', async function(e) {
+            await handleModelChange(e.target.value, 'settings');
+          });
+        }
+
+        if (inlineModelSelect) {
+          inlineModelSelect.addEventListener('change', async function(e) {
+            await handleModelChange(e.target.value, 'inline');
+          });
+        }
+      });
+
+      // Load AI settings on page load
+      loadAISettings();
 
       // Load conversations list
       async function loadConversations() {
+          const conversationsList = document.getElementById('conversationsList');
+          if (!conversationsList) {
+              console.error('Conversations list element not found');
+              return;
+          }
+
+          // Show loading state
+          conversationsList.innerHTML = `
+              <div class="skeleton-loader">
+                  <div class="skeleton-text" style="height: 56px; margin-bottom: 8px;"></div>
+                  <div class="skeleton-text" style="height: 56px; margin-bottom: 8px;"></div>
+                  <div class="skeleton-text" style="height: 56px;"></div>
+              </div>
+          `;
+
           try {
               const response = await fetch('/api/conversations');
+
+              if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+              }
+
               const conversations = await response.json();
+
+              if (!Array.isArray(conversations)) {
+                  console.error('Invalid conversations data:', conversations);
+                  conversationsList.innerHTML = `
+                      <div class="error-state">
+                          <div class="error-state-icon">
+                              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                              </svg>
+                          </div>
+                          <div class="error-state-title">Invalid data format</div>
+                          <div class="error-state-message">The server returned invalid conversation data.</div>
+                          <div class="error-state-actions">
+                              <button class="btn btn-primary" onclick="loadConversations()">Retry</button>
+                          </div>
+                      </div>
+                  `;
+                  return;
+              }
+
+              if (conversations.length === 0) {
+                  conversationsList.innerHTML = `
+                      <div class="empty-state">
+                          <div class="empty-state-icon">
+                              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                              </svg>
+                          </div>
+                          <div class="empty-state-title">No conversations yet</div>
+                          <div class="empty-state-description">Start a new conversation to begin chatting with your documents</div>
+                          <div class="empty-state-action">
+                              <button class="btn btn-primary" onclick="createNewConversation()">Start New Conversation</button>
+                          </div>
+                      </div>
+                  `;
+                  return;
+              }
 
               conversationsList.innerHTML = '';
 
@@ -326,19 +1611,28 @@
                   const convItem = document.createElement('div');
                   convItem.className = `conversation-item ${conv.id === currentConversationId ? 'active' : ''}`;
                   convItem.dataset.conversationId = conv.id;
+                  convItem.title = escapeHtml(conv.title);
+                  const escapedTitle = escapeHtml(conv.title).replace(/'/g, "\\'").replace(/"/g, '&quot;');
                   convItem.innerHTML = `
                       <div class="conversation-content">
                           <div class="conversation-title" data-conversation-id="${conv.id}">${escapeHtml(conv.title)}</div>
                           <div class="conversation-meta">${new Date(conv.updated_at).toLocaleDateString()}</div>
                       </div>
                       <div class="conversation-actions">
-                          <button class="conversation-rename" onclick="event.stopPropagation(); startRename(${conv.id}, '${escapeHtml(conv.title)}')" title="Rename">
+                          <button class="conversation-export" data-conversation-id="${conv.id}" title="Export">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                  <polyline points="7 10 12 15 17 10"></polyline>
+                                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                              </svg>
+                          </button>
+                          <button class="conversation-rename" data-conversation-id="${conv.id}" title="Rename">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                               </svg>
                           </button>
-                          <button class="conversation-delete" onclick="event.stopPropagation(); deleteConversation(${conv.id})" title="Delete">
+                          <button class="conversation-delete" data-conversation-id="${conv.id}" title="Delete">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                   <polyline points="3 6 5 6 21 6"></polyline>
                                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -347,45 +1641,243 @@
                       </div>
                   `;
 
-                  // Click to navigate
+                  // Track clicks to prevent navigation on double-click
+                  let clickTimeout = null;
+                  let isDoubleClick = false;
+
+                  // Double-click title to rename (must be before click handler)
+                  const titleEl = convItem.querySelector('.conversation-title');
+                  if (titleEl) {
+                      titleEl.addEventListener('dblclick', (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          isDoubleClick = true;
+                          clearTimeout(clickTimeout);
+                          clickTimeout = null;
+                          // console.log('Double-click detected on title:', conv.id, conv.title);
+                          if (typeof startRename === 'function') {
+                              startRename(conv.id, conv.title);
+                          } else {
+                              console.error('startRename function not found');
+                          }
+                      });
+                  }
+
+                  // Click to navigate (with delay to allow double-click)
                   convItem.addEventListener('click', (e) => {
-                      if (!e.target.closest('.conversation-actions')) {
-                          window.location.href = `/chat?conversation_id=${conv.id}`;
+                      // Don't navigate if clicking on action buttons or rename input
+                      if (e.target.closest('.conversation-actions') || 
+                          e.target.closest('.conversation-title-input') ||
+                          e.target.classList.contains('conversation-title-input')) {
+                          return;
                       }
+
+                      // If double-click was detected, don't navigate
+                      if (isDoubleClick) {
+                          isDoubleClick = false;
+                          return;
+                      }
+
+                      // Delay navigation to allow double-click detection
+                      clearTimeout(clickTimeout);
+                      clickTimeout = setTimeout(() => {
+                          if (!isDoubleClick) {
+                              window.location.href = `/chat?conversation_id=${conv.id}`;
+                          }
+                          isDoubleClick = false;
+                      }, 300); // 300ms delay to detect double-click
                   });
 
-                  // Double-click title to rename
-                  const titleEl = convItem.querySelector('.conversation-title');
-                  titleEl.addEventListener('dblclick', (e) => {
-                      e.stopPropagation();
-                      startRename(conv.id, conv.title);
-                  });
+                  // Export button handler
+                  const exportBtn = convItem.querySelector('.conversation-export');
+                  if (exportBtn) {
+                      exportBtn.addEventListener('click', (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          clearTimeout(clickTimeout);
+                          exportConversation(conv.id);
+                      });
+                  }
+
+                  // Rename button handler
+                  const renameBtn = convItem.querySelector('.conversation-rename');
+                  if (renameBtn) {
+                      renameBtn.addEventListener('click', (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          clearTimeout(clickTimeout);
+                          // console.log('Rename button clicked for conversation:', conv.id, conv.title);
+                          if (typeof startRename === 'function') {
+                              startRename(conv.id, conv.title);
+                          } else {
+                              console.error('startRename function not found. Available functions:', Object.keys(window).filter(k => typeof window[k] === 'function'));
+                          }
+                      });
+                  }
+
+                  // Delete button handler
+                  const deleteBtn = convItem.querySelector('.conversation-delete');
+                  if (deleteBtn) {
+                      deleteBtn.addEventListener('click', (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          clearTimeout(clickTimeout);
+                          deleteConversation(conv.id);
+                      });
+                  }
+
+                  // Touch gesture support (swipe to delete)
+                  addSwipeGestures(convItem, conv.id);
 
                   conversationsList.appendChild(convItem);
               });
           } catch (error) {
               console.error('Failed to load conversations:', error);
+              conversationsList.innerHTML = `
+                  <div class="error-state">
+                      <div class="error-state-icon">
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="8" x2="12" y2="12"></line>
+                              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                          </svg>
+                      </div>
+                      <div class="error-state-title">Failed to load conversations</div>
+                      <div class="error-state-message">${escapeHtml(error.message)}</div>
+                      <div class="error-state-actions">
+                          <button class="btn btn-primary" onclick="loadConversations()">Retry</button>
+                      </div>
+                  </div>
+              `;
           }
+      }
+
+      // Swipe gestures for conversation items (mobile)
+      function addSwipeGestures(element, conversationId) {
+          if (!element || window.innerWidth > 768) return;
+
+          let touchStartX = 0;
+          let touchStartY = 0;
+          let touchEndX = 0;
+          let touchEndY = 0;
+          let isSwiping = false;
+
+          element.addEventListener('touchstart', (e) => {
+              touchStartX = e.touches[0].clientX;
+              touchStartY = e.touches[0].clientY;
+              isSwiping = false;
+          }, { passive: true });
+
+          element.addEventListener('touchmove', (e) => {
+              if (!touchStartX || !touchStartY) return;
+
+              touchEndX = e.touches[0].clientX;
+              touchEndY = e.touches[0].clientY;
+
+              const deltaX = touchEndX - touchStartX;
+              const deltaY = touchEndY - touchStartY;
+
+              // Only consider horizontal swipes
+              if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+                  isSwiping = true;
+                  e.preventDefault();
+
+                  // Limit swipe distance
+                  const maxSwipe = 80;
+                  const swipeDistance = Math.min(Math.abs(deltaX), maxSwipe);
+
+                  if (deltaX < 0) {
+                      // Swipe left (reveal delete)
+                      element.style.transform = `translateX(-${swipeDistance}px)`;
+                      element.style.transition = 'none';
+                  }
+              }
+          }, { passive: false });
+
+          element.addEventListener('touchend', (e) => {
+              if (!isSwiping) return;
+
+              const deltaX = touchEndX - touchStartX;
+              const threshold = 50;
+
+              element.style.transition = 'transform 0.3s ease';
+
+              if (deltaX < -threshold) {
+                  // Swipe left enough - show delete confirmation or delete directly
+                  element.style.transform = 'translateX(-80px)';
+
+                  // Auto-delete after showing delete state, or show confirmation
+                  setTimeout(() => {
+                      if (confirm('Delete this conversation?')) {
+                          deleteConversation(conversationId);
+                      } else {
+                          element.style.transform = 'translateX(0)';
+                      }
+                  }, 300);
+              } else {
+                  // Not enough swipe - snap back
+                  element.style.transform = 'translateX(0)';
+              }
+
+              // Reset
+              touchStartX = 0;
+              touchStartY = 0;
+              touchEndX = 0;
+              touchEndY = 0;
+              isSwiping = false;
+          }, { passive: true });
       }
 
       // Rename conversation
       function startRename(conversationId, currentTitle) {
-          const titleElement = document.querySelector(`[data-conversation-id="${conversationId}"]`);
-          if (!titleElement) return;
+          // console.log('✓ startRename called with:', conversationId, currentTitle);
+          // Find the specific conversation title element (not the container)
+          const titleElement = document.querySelector(`.conversation-title[data-conversation-id="${conversationId}"]`);
+          if (!titleElement) {
+              console.error('Title element not found for conversation:', conversationId);
+              return;
+          }
+
+          // Check if already in rename mode
+          const existingInput = titleElement.parentElement.querySelector('.conversation-title-input');
+          if (existingInput) {
+              // console.log('Already in rename mode, focusing existing input');
+              existingInput.focus();
+              existingInput.select();
+              return;
+          }
 
           const input = document.createElement('input');
           input.type = 'text';
           input.className = 'conversation-title-input';
           input.value = currentTitle;
+          input.style.width = '100%';
+          input.style.maxWidth = '100%';
+          input.setAttribute('data-conversation-id', conversationId);
 
+          // Store reference to parent for restoration
+          const parentElement = titleElement.parentElement;
           titleElement.replaceWith(input);
-          input.focus();
-          input.select();
+          
+          // Use setTimeout to ensure the input is in the DOM before focusing
+          setTimeout(() => {
+              input.focus();
+              input.select();
+          }, 10);
+
+          let isRenaming = true;
+          let renameCompleted = false;
 
           async function finishRename() {
+              if (renameCompleted) return;
+              renameCompleted = true;
+              
               const newTitle = input.value.trim();
+              // console.log('Finishing rename:', newTitle, 'Original:', currentTitle);
+
               if (newTitle && newTitle !== currentTitle) {
                   try {
+                      // console.log('Sending PUT request to /api/conversations/' + conversationId);
                       const response = await fetch(`/api/conversations/${conversationId}`, {
                           method: 'PUT',
                           headers: {
@@ -394,26 +1886,188 @@
                           body: JSON.stringify({ title: newTitle })
                       });
 
+                      // console.log('Response status:', response.status, response.ok);
+
                       if (response.ok) {
+                          const updatedData = await response.json().catch(() => null);
+                          // console.log('Rename successful, updated data:', updatedData);
+                          showNotification('Conversation renamed successfully', 'success');
+                          // Reload conversations to reflect the change
                           loadConversations();
+                      } else {
+                          const errorData = await response.json().catch(() => ({ error: 'Failed to rename' }));
+                          console.error('Rename failed:', errorData);
+                          showNotification(errorData.error || 'Failed to rename conversation', 'error');
+                          // Restore original title
+                          const originalTitle = document.createElement('div');
+                          originalTitle.className = 'conversation-title';
+                          originalTitle.setAttribute('data-conversation-id', conversationId);
+                          originalTitle.textContent = currentTitle;
+                          input.replaceWith(originalTitle);
                       }
                   } catch (error) {
                       console.error('Failed to rename conversation:', error);
+                      showNotification('Failed to rename conversation', 'error');
+                      // Restore original title
+                      const originalTitle = document.createElement('div');
+                      originalTitle.className = 'conversation-title';
+                      originalTitle.setAttribute('data-conversation-id', conversationId);
+                      originalTitle.textContent = currentTitle;
+                      input.replaceWith(originalTitle);
                   }
               } else {
-                  loadConversations();
+                  // No change or empty - restore original
+                  const originalTitle = document.createElement('div');
+                  originalTitle.className = 'conversation-title';
+                  originalTitle.setAttribute('data-conversation-id', conversationId);
+                  originalTitle.textContent = currentTitle;
+                  input.replaceWith(originalTitle);
               }
+              isRenaming = false;
           }
 
-          input.addEventListener('blur', finishRename);
+          // Use delayed blur to prevent immediate blur on button click
+          let blurTimeout;
+          let inputClicked = false;
+          
+          input.addEventListener('blur', (e) => {
+              // Delay blur to allow button clicks and other interactions to be processed
+              blurTimeout = setTimeout(() => {
+                  // Only finish rename if input wasn't just clicked (which would refocus it)
+                  if (isRenaming && !renameCompleted && !inputClicked) {
+                      finishRename();
+                  }
+                  inputClicked = false;
+              }, 300);
+          });
+
+          input.addEventListener('focus', () => {
+              // Clear any pending blur timeout when input is focused
+              clearTimeout(blurTimeout);
+              inputClicked = false;
+          });
+
           input.addEventListener('keydown', (e) => {
               if (e.key === 'Enter') {
                   e.preventDefault();
-                  input.blur();
+                  e.stopPropagation();
+                  clearTimeout(blurTimeout);
+                  inputClicked = false;
+                  finishRename();
               } else if (e.key === 'Escape') {
-                  loadConversations();
+                  e.preventDefault();
+                  e.stopPropagation();
+                  clearTimeout(blurTimeout);
+                  renameCompleted = true;
+                  isRenaming = false;
+                  inputClicked = false;
+                  const originalTitle = document.createElement('div');
+                  originalTitle.className = 'conversation-title';
+                  originalTitle.setAttribute('data-conversation-id', conversationId);
+                  originalTitle.textContent = currentTitle;
+                  input.replaceWith(originalTitle);
               }
           });
+
+          // Prevent click events from bubbling and causing navigation
+          input.addEventListener('mousedown', (e) => {
+              e.stopPropagation();
+              inputClicked = true;
+              // Clear blur timeout when clicking on input
+              clearTimeout(blurTimeout);
+          });
+          
+          input.addEventListener('click', (e) => {
+              e.stopPropagation();
+              inputClicked = true;
+              clearTimeout(blurTimeout);
+          });
+          
+          input.addEventListener('input', () => {
+              // Clear blur timeout when user is typing
+              clearTimeout(blurTimeout);
+              inputClicked = false;
+          });
+      }
+      
+      // Make startRename globally accessible
+      window.startRename = startRename;
+
+      // Mobile sidebar toggle functions
+      function toggleMobileSidebar() {
+          const sidebar = document.querySelector('.sidebar');
+          const conversationsSidebar = document.querySelector('.conversations-sidebar');
+          const overlay = document.getElementById('mobileOverlay');
+
+          if (!sidebar) {
+              console.error('Sidebar element not found');
+              return;
+          }
+
+          if (window.innerWidth <= 768) {
+              const isOpening = !sidebar.classList.contains('open');
+
+              // Remove collapsed class on mobile to ensure full width
+              sidebar.classList.remove('collapsed');
+
+              // Toggle open class
+              sidebar.classList.toggle('open');
+
+              // Close conversations sidebar when opening main sidebar
+              if (isOpening && conversationsSidebar) {
+                  conversationsSidebar.classList.remove('open');
+              }
+
+              // Show/hide overlay
+              if (overlay) {
+                  if (isOpening) {
+                      overlay.classList.add('active');
+                  } else {
+                      overlay.classList.remove('active');
+                  }
+              }
+
+              // Force sidebar to be visible
+              sidebar.style.display = 'flex';
+              sidebar.style.visibility = 'visible';
+              sidebar.style.opacity = '1';
+          }
+      }
+
+      function toggleMobileConversationsSidebar() {
+          const conversationsSidebar = document.querySelector('.conversations-sidebar');
+          const sidebar = document.querySelector('.sidebar');
+          const overlay = document.getElementById('mobileOverlay');
+
+          if (window.innerWidth <= 768) {
+              const isOpening = !conversationsSidebar?.classList.contains('open');
+
+              conversationsSidebar?.classList.toggle('open');
+
+              // Close main sidebar when opening conversations sidebar
+              if (isOpening) {
+                  sidebar?.classList.remove('open');
+              }
+
+              // Show/hide overlay
+              if (overlay) {
+                  if (isOpening) {
+                      overlay.classList.add('active');
+                  } else {
+                      overlay.classList.remove('active');
+                  }
+              }
+          }
+      }
+
+      function closeAllMobileSidebars() {
+          const sidebar = document.querySelector('.sidebar');
+          const conversationsSidebar = document.querySelector('.conversations-sidebar');
+          const overlay = document.getElementById('mobileOverlay');
+
+          if (sidebar) sidebar.classList.remove('open');
+          if (conversationsSidebar) conversationsSidebar.classList.remove('open');
+          if (overlay) overlay.classList.remove('active');
       }
 
       // Create new conversation
@@ -472,12 +2126,19 @@
           const newSection = document.getElementById('newSection');
           const welcomeMessage = document.getElementById('welcomeMessage');
 
+          if (!historySection || !newSection) return;
+
           try {
               const url = currentConversationId
                   ? `/api/chat-history?conversation_id=${currentConversationId}`
                   : `/api/chat-history?collection=${collectionSelect.value}`;
 
               const response = await fetch(url);
+
+              if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+              }
+
               const history = await response.json();
 
               historySection.innerHTML = '';
@@ -521,8 +2182,9 @@
           messageDiv.className = `message ${isUser ? 'message-user' : 'message-assistant'}`;
 
           if (isUser) {
+              const username = '{{ user.username|upper }}';
               messageDiv.innerHTML = `
-                  <div class="avatar-small">{{ user.username[0].upper() }}</div>
+                  <div class="avatar-small">${username.charAt(0)}</div>
                   <div class="message-content">${escapeHtml(content)}</div>
               `;
           } else {
@@ -576,7 +2238,8 @@
           }
       });
 
-      function addMessage(content, isUser = false) {
+      function addMessage(content, isUser = false, citations = []) {
+          // Citations parameter kept for compatibility but not displayed
           const newSection = document.getElementById('newSection');
           const welcomeMessage = document.getElementById('welcomeMessage');
 
@@ -600,8 +2263,9 @@
           messageDiv.className = `message ${isUser ? 'message-user' : 'message-assistant'}`;
 
           if (isUser) {
+              const username = '{{ user.username|upper }}';
               messageDiv.innerHTML = `
-                  <div class="avatar-small">{{ user.username[0].upper() }}</div>
+                  <div class="avatar-small">${username.charAt(0)}</div>
                   <div class="message-content">${escapeHtml(content)}</div>
               `;
           } else {
@@ -622,6 +2286,62 @@
           }
 
           newSection.appendChild(messageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      // Streaming message functions
+      function addStreamingMessage() {
+          const newSection = document.getElementById('newSection');
+          const welcomeMessage = document.getElementById('welcomeMessage');
+
+          if (welcomeMessage && welcomeMessage.style.display !== 'none') {
+              welcomeMessage.style.display = 'none';
+          }
+
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'message message-assistant message-streaming';
+          messageDiv.id = 'streamingMessage';
+          messageDiv.innerHTML = `
+              <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
+                  <rect width="60" height="60" rx="12" fill="#EEF2FF"/>
+                  <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                        stroke="#4F46E5" stroke-width="3" fill="none"/>
+                  <circle cx="30" cy="30" r="8" fill="#4F46E5"/>
+              </svg>
+              <div class="message-content markdown-content">
+                  <button class="copy-btn" title="Copy response">📋</button>
+                  <div class="assistant-text" id="streamingText"></div>
+                  <span class="streaming-cursor">▊</span>
+              </div>
+          `;
+
+          newSection.appendChild(messageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          return messageDiv;
+      }
+
+      function updateStreamingMessage(messageDiv, content) {
+          const textDiv = messageDiv.querySelector('#streamingText');
+          if (textDiv) {
+              textDiv.innerHTML = formatResponse(content);
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+          }
+      }
+
+      function finalizeStreamingMessage(messageDiv, content, citations = []) {
+          messageDiv.classList.remove('message-streaming');
+          messageDiv.id = '';
+
+          const textDiv = messageDiv.querySelector('#streamingText');
+          const cursor = messageDiv.querySelector('.streaming-cursor');
+          if (cursor) cursor.remove();
+
+          if (textDiv) {
+              textDiv.innerHTML = formatResponse(content);
+          }
+
+          // Sources section removed - no longer displaying citations
+
           chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
@@ -667,8 +2387,12 @@
 
       function updateConnectionStatus(status) {
           const statusEl = document.getElementById('connectionStatus');
+          if (!statusEl) return;
+
           const dot = statusEl.querySelector('.status-dot');
           const text = statusEl.querySelector('span:last-child');
+
+          if (!dot || !text) return;
 
           statusEl.className = 'status-badge-small';
           dot.className = 'status-dot';
@@ -685,6 +2409,38 @@
           }
       }
 
+      // Stop button handler
+      stopButton.addEventListener('click', () => {
+          if (abortController) {
+              abortController.abort();
+              abortController = null;
+
+              removeLoadingMessage();
+              sendButton.disabled = false;
+              stopButton.style.display = 'none';
+              updateConnectionStatus('ready');
+
+              // Add a message indicating the response was stopped
+              const stoppedDiv = document.createElement('div');
+              stoppedDiv.className = 'message message-assistant';
+              stoppedDiv.style.opacity = '0.7';
+              stoppedDiv.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 60 60" fill="none">
+                    <rect width="60" height="60" rx="12" fill="#FEF3C7"/>
+                    <path d="M30 15L45 25V40L30 50L15 40V25L30 15Z"
+                          stroke="#F59E0B" stroke-width="3" fill="none"/>
+                    <circle cx="30" cy="30" r="8" fill="#F59E0B"/>
+                </svg>
+                <div class="message-content">
+                    <em>Response stopped by user.</em>
+                </div>
+              `;
+              document.getElementById('newSection').appendChild(stoppedDiv);
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+              messageInput.focus();
+          }
+      });
+
       // Handle form submission
       chatForm.addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -700,9 +2456,31 @@
 
           addLoadingMessage();
           sendButton.disabled = true;
+          stopButton.style.display = 'block';
           updateConnectionStatus('processing');
 
+          // Create new AbortController for this request
+          abortController = new AbortController();
+
+          // Include AI settings in request
+          const requestData = {
+            message: message,
+            collection: collection,
+            conversation_id: currentConversationId,
+            is_first_message: isFirstMessage,
+            stream: false,
+            ai_model: currentAISettings.ai_model,
+            temperature: currentAISettings.temperature,
+            max_context_messages: currentAISettings.max_context_messages,
+            context_strategy: currentAISettings.context_strategy
+          };
+
+          // Debug: Log the model being sent
+          // console.log('Sending chat request with model:', requestData.ai_model);
+          // console.log('Current AI Settings:', currentAISettings);
+
           try {
+              // Non-streaming response (load and display)
               const response = await fetch('/api/chat', {
                   method: 'POST',
                   headers: {
@@ -711,43 +2489,260 @@
                   body: JSON.stringify({
                       message: message,
                       collection: collection,
-                      conversation_id: currentConversationId,
-                      is_first_message: isFirstMessage
-                  })
+                      conversation_id: currentConversationId || null,
+                      is_first_message: isFirstMessage,
+                      stream: false,
+                      ai_model: currentAISettings.ai_model,
+                      temperature: currentAISettings.temperature,
+                      max_context_messages: currentAISettings.max_context_messages,
+                      context_strategy: currentAISettings.context_strategy
+                  }),
+                  signal: abortController.signal
               });
 
-              const data = await response.json();
-
-              removeLoadingMessage();
-              updateConnectionStatus('ready');
-
-              if (response.ok) {
-                  addMessage(data.response);
-
-                  if (data.conversation_id && !currentConversationId) {
-                      currentConversationId = data.conversation_id;
-                      isFirstMessage = false;
-                      window.history.pushState({}, '', `/chat?conversation_id=${data.conversation_id}`);
-                      loadConversations();
-                  }
-              } else {
-                  addMessage(`Error: ${data.error || 'Failed to get response'}`, false);
-                  updateConnectionStatus('error');
-                  setTimeout(() => updateConnectionStatus('ready'), 3000);
+              if (!response.ok) {
+                  const errorData = await response.json().catch(() => ({ error: 'Unknown error occurred' }));
+                  throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
               }
-          } catch (error) {
+
+              const data = await response.json();
+              // console.log('DEBUG: Received response data:', data);
+              // console.log('DEBUG: Current conversation ID before update:', currentConversationId);
+
               removeLoadingMessage();
-              addMessage('Error: Unable to connect to the server', false);
+
+              if (data.response) {
+                  // console.log('DEBUG: Adding message to UI, response length:', data.response.length);
+                  addMessage(data.response, false, data.citations || []);
+              } else {
+                  console.error('No response in data:', data);
+                  addMessage('No response received from the server.', false);
+              }
+
+              // Always update conversation_id if provided (even if we already have one)
+              if (data.conversation_id) {
+                  // console.log('DEBUG: Updating conversation ID from', currentConversationId, 'to', data.conversation_id);
+                  currentConversationId = data.conversation_id;
+                  isFirstMessage = false;
+                  window.history.pushState({}, '', `/chat?conversation_id=${data.conversation_id}`);
+                  loadConversations();
+              }
+
+              stopButton.style.display = 'none';
+              updateConnectionStatus('ready');
+          } catch (error) {
+              // Check if error is due to abort
+              if (error.name === 'AbortError') {
+                  // Request was aborted, already handled in stop button handler
+                  return;
+              }
+
+              removeLoadingMessage();
+              stopButton.style.display = 'none';
+              const errorMessage = error.message || 'Unable to connect to the server';
+
+              // Create error message with better styling
+              const errorDiv = document.createElement('div');
+              errorDiv.className = 'message message-assistant message-error';
+
+              // Extract error details if available
+              let errorDetails = errorMessage;
+              let errorTitle = 'Error';
+
+              // Try to parse JSON error if it's a string
+              try {
+                const errorObj = JSON.parse(errorMessage);
+                if (errorObj.error) {
+                  errorDetails = errorObj.error;
+                }
+                if (errorObj.title) {
+                  errorTitle = errorObj.title;
+                }
+              } catch (e) {
+                // Not JSON, use as is
+              }
+
+              errorDiv.innerHTML = `
+                <div class="message-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+                <div class="message-content">
+                    <div class="error-title">${escapeHtml(errorTitle)}</div>
+                    <div class="error-message-text">${escapeHtml(errorDetails)}</div>
+                    <div class="error-actions">
+                      <button class="error-retry-btn" onclick="this.closest('.message-error').querySelector('.error-retry').click()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="23 4 23 10 17 10"></polyline>
+                          <polyline points="1 20 1 14 7 14"></polyline>
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Retry
+                      </button>
+                      <span class="error-help-text">If the problem persists, please contact support.</span>
+                    </div>
+                    <div class="error-retry" style="display: none;" onclick="chatForm.dispatchEvent(new Event('submit'))"></div>
+                </div>
+              `;
+              document.getElementById('newSection').appendChild(errorDiv);
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+
               updateConnectionStatus('error');
               setTimeout(() => updateConnectionStatus('ready'), 3000);
           } finally {
+              if (abortController && !abortController.signal.aborted) {
+                  abortController = null;
+              }
               sendButton.disabled = false;
               messageInput.focus();
           }
       });
 
       newConversationBtn.addEventListener('click', createNewConversation);
-      loadConversations();
+
+      // Note: the sidebar toggle button uses `onclick="toggleSidebar()"` which
+      // handles both desktop (collapse) and mobile (open/close). Avoid adding
+      // another click listener here, otherwise the sidebar can toggle twice.
+
+      // Close sidebar when clicking on nav menu items on mobile
+      if (window.innerWidth <= 768) {
+          const navMenuLinks = document.querySelectorAll('.nav-menu a');
+          navMenuLinks.forEach(link => {
+              link.addEventListener('click', () => {
+                  // Close sidebar after a short delay to allow navigation
+                  setTimeout(() => {
+                      closeAllMobileSidebars();
+                  }, 100);
+              });
+          });
+      }
+
+      // Mobile conversations toggle
+      const mobileConversationsToggle = document.getElementById('mobileConversationsToggle');
+      if (mobileConversationsToggle) {
+          mobileConversationsToggle.addEventListener('click', (e) => {
+              e.stopPropagation();
+              toggleMobileConversationsSidebar();
+          });
+      }
+
+      // Close button for conversations sidebar
+      const conversationsCloseBtn = document.getElementById('conversationsCloseBtn');
+      if (conversationsCloseBtn) {
+          conversationsCloseBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              closeAllMobileSidebars();
+          });
+      }
+
+      // Update active state in mobile bottom nav based on current page
+      function updateMobileNavActive() {
+          const currentPath = window.location.pathname;
+          const navItems = document.querySelectorAll('.mobile-bottom-nav-item');
+          navItems.forEach(item => {
+              item.classList.remove('active');
+              if (item.getAttribute('href') === currentPath) {
+                  item.classList.add('active');
+              }
+          });
+      }
+
+      // Update mobile nav on page load
+      updateMobileNavActive();
+
+      // Prevent body scroll when sidebar is open on mobile
+      function updateBodyScroll() {
+          if (window.innerWidth <= 768) {
+              const sidebar = document.querySelector('.sidebar');
+              const conversationsSidebar = document.querySelector('.conversations-sidebar');
+              const isOpen = sidebar?.classList.contains('open') || conversationsSidebar?.classList.contains('open');
+
+              if (isOpen) {
+                  document.body.classList.add('sidebar-open');
+              } else {
+                  document.body.classList.remove('sidebar-open');
+              }
+          } else {
+              document.body.classList.remove('sidebar-open');
+          }
+      }
+
+      // Watch for sidebar state changes
+      const sidebarObserver = new MutationObserver(updateBodyScroll);
+      const sidebar = document.querySelector('.sidebar');
+      const conversationsSidebar = document.querySelector('.conversations-sidebar');
+
+      if (sidebar) {
+          sidebarObserver.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+      }
+      if (conversationsSidebar) {
+          sidebarObserver.observe(conversationsSidebar, { attributes: true, attributeFilter: ['class'] });
+      }
+
+      // Swipe gestures for mobile sidebars
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchEndX = 0;
+      let touchEndY = 0;
+
+      document.addEventListener('touchstart', (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+          touchStartY = e.changedTouches[0].screenY;
+      }, { passive: true });
+
+      document.addEventListener('touchend', (e) => {
+          if (window.innerWidth > 768) return;
+
+          touchEndX = e.changedTouches[0].screenX;
+          touchEndY = e.changedTouches[0].screenY;
+
+          const deltaX = touchEndX - touchStartX;
+          const deltaY = touchEndY - touchStartY;
+
+          // Swipe right from left edge (open conversations sidebar)
+          if (touchStartX < 20 && deltaX > 100 && Math.abs(deltaY) < 50) {
+              toggleMobileConversationsSidebar();
+          }
+
+          // Swipe left to close sidebars
+          if (deltaX < -100 && Math.abs(deltaY) < 50) {
+              const sidebar = document.querySelector('.sidebar');
+              const conversationsSidebar = document.querySelector('.conversations-sidebar');
+
+              if (sidebar?.classList.contains('open') || conversationsSidebar?.classList.contains('open')) {
+                  closeAllMobileSidebars();
+              }
+          }
+      }, { passive: true });
+
+      // Ensure conversations sidebar is visible on desktop
+      function ensureConversationsSidebarVisible() {
+          const conversationsSidebar = document.querySelector('.conversations-sidebar');
+          if (conversationsSidebar && window.innerWidth > 768) {
+              conversationsSidebar.style.display = 'flex';
+              // Let CSS control positioning (it depends on whether the main sidebar is collapsed)
+              conversationsSidebar.style.left = '';
+              conversationsSidebar.style.visibility = 'visible';
+          }
+      }
+
+      // Load conversations when DOM is ready
+      if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+              ensureConversationsSidebarVisible();
+              loadConversations();
+          });
+      } else {
+          // DOM is already ready
+          ensureConversationsSidebarVisible();
+          loadConversations();
+      }
+
+      // Also ensure visibility on window resize
+      window.addEventListener('resize', ensureConversationsSidebarVisible);
 
       function showUploadModal() {
           document.getElementById('uploadModal').style.display = 'flex';
@@ -758,6 +2753,115 @@
       }
 
       {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
+      // Load categories on page load
+      let categories = [];
+      async function loadCategories() {
+          try {
+              const response = await fetch('/api/categories');
+              const data = await response.json();
+              if (response.ok && data.categories) {
+                  categories = data.categories;
+                  updateCategorySelect();
+              }
+          } catch (error) {
+              console.error('Failed to load categories:', error);
+          }
+      }
+
+      function updateCategorySelect() {
+          const select = document.getElementById('categorySelect');
+          if (!select) return;
+
+          // Keep the "No Category" option
+          select.innerHTML = '<option value="">No Category</option>';
+
+          categories.forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat.id;
+              option.textContent = cat.name;
+              select.appendChild(option);
+          });
+      }
+
+      // Drag & Drop functionality
+      const dragDropZone = document.getElementById('dragDropZone');
+      const fileInput = document.getElementById('pdfFile');
+      const fileList = document.getElementById('fileList');
+
+      if (dragDropZone && fileInput) {
+          // Click to browse
+          dragDropZone.addEventListener('click', () => {
+              fileInput.click();
+          });
+
+          // Drag events
+          dragDropZone.addEventListener('dragover', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dragDropZone.classList.add('drag-over');
+          });
+
+          dragDropZone.addEventListener('dragleave', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dragDropZone.classList.remove('drag-over');
+          });
+
+          dragDropZone.addEventListener('drop', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              dragDropZone.classList.remove('drag-over');
+
+              const files = Array.from(e.dataTransfer.files).filter(file => {
+                  const ext = file.name.split('.').pop().toLowerCase();
+                  return ['pdf', 'docx', 'doc', 'ppt', 'pptx', 'txt'].includes(ext);
+              });
+
+              if (files.length > 0) {
+                  const dataTransfer = new DataTransfer();
+                  files.forEach(file => dataTransfer.items.add(file));
+                  fileInput.files = dataTransfer.files;
+                  fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+              } else {
+                  showNotification('Please drop valid files (PDF, DOCX, PPT, TXT)', 'error');
+              }
+          });
+      }
+
+      // Show selected files
+      document.getElementById('pdfFile')?.addEventListener('change', function(e) {
+          if (!fileList) return;
+
+          const files = Array.from(e.target.files);
+          if (files.length === 0) {
+              fileList.innerHTML = '';
+              dragDropZone?.classList.remove('drag-over');
+              return;
+          }
+
+          fileList.innerHTML = '<div style="font-weight: 600; margin-bottom: 8px; color: var(--text);">Selected Files:</div>' +
+              files.map((file, idx) =>
+                  `<div style="padding: 8px 12px; margin: 4px 0; background: var(--bg-secondary); border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                      <span>${idx + 1}. ${escapeHtml(file.name)} (${(file.size / 1024).toFixed(1)} KB)</span>
+                      <button type="button" onclick="removeFile(${idx})" style="background: var(--danger-light); color: var(--danger); border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px;">Remove</button>
+                  </div>`
+              ).join('');
+      });
+
+      // Remove file function
+      window.removeFile = function(index) {
+          const fileInput = document.getElementById('pdfFile');
+          if (!fileInput) return;
+
+          const files = Array.from(fileInput.files);
+          files.splice(index, 1);
+
+          const dataTransfer = new DataTransfer();
+          files.forEach(file => dataTransfer.items.add(file));
+          fileInput.files = dataTransfer.files;
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+
       document.getElementById('uploadForm').addEventListener('submit', async (e) => {
           e.preventDefault();
 
@@ -767,18 +2871,30 @@
           const uploadDetails = document.getElementById('uploadDetails');
           const uploadButton = document.getElementById('uploadButton');
           const statusIcon = document.getElementById('statusIcon');
+          const fileInput = document.getElementById('pdfFile');
 
+          if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+              alert('Please select at least one file');
+              return;
+          }
+
+          const fileCount = fileInput.files.length;
           uploadProgress.style.display = 'block';
           uploadButton.disabled = true;
           uploadButton.textContent = 'Processing...';
-
-          uploadStatus.textContent = 'Processing file...';
-          uploadDetails.textContent = 'Validating file format and preparing for upload';
           statusIcon.innerHTML = '<div class="spinner-small"></div>';
 
+          uploadStatus.textContent = `Processing ${fileCount} file(s)...`;
+          uploadDetails.textContent = 'Validating files and preparing for upload';
+
           try {
-              uploadStatus.textContent = 'Uploading file...';
-              uploadDetails.textContent = 'Transferring file to server';
+              const categoryId = document.getElementById('categorySelect')?.value;
+              if (categoryId) {
+                  formData.append('category_id', categoryId);
+              }
+
+              uploadStatus.textContent = `Uploading ${fileCount} file(s)...`;
+              uploadDetails.textContent = 'Transferring files to server';
 
               const response = await fetch('/api/upload', {
                   method: 'POST',
@@ -787,22 +2903,32 @@
 
               const data = await response.json();
 
-              if (response.ok) {
-                  uploadStatus.textContent = 'Indexing document...';
+              if (response.ok && data.success) {
+                  uploadStatus.textContent = 'Indexing documents...';
                   uploadDetails.textContent = 'Extracting text, processing images, and creating embeddings';
 
                   await new Promise(resolve => setTimeout(resolve, 2000));
 
-                  uploadStatus.textContent = 'Upload successful!';
-                  uploadDetails.textContent = 'Document indexed and ready for queries';
-                  statusIcon.innerHTML = '✅';
+                  const uploadedCount = data.uploaded_files ? data.uploaded_files.length : 0;
+                  const failedCount = data.failed_files ? data.failed_files.length : 0;
+
+                  uploadStatus.textContent = `Upload successful! ${uploadedCount} file(s) indexed`;
+                  if (failedCount > 0) {
+                      uploadDetails.textContent = `${failedCount} file(s) failed. Check console for details.`;
+                      console.error('Failed files:', data.failed_files);
+                      statusIcon.innerHTML = '⚠️';
+                  } else {
+                      uploadDetails.textContent = 'All documents indexed and ready for queries';
+                      statusIcon.innerHTML = '✅';
+                  }
                   uploadButton.textContent = 'Complete';
 
                   setTimeout(() => {
+                      closeUploadModal();
                       location.reload();
                   }, 2000);
               } else {
-                  uploadStatus.textContent = `Error: ${data.error}`;
+                  uploadStatus.textContent = `Error: ${data.error || 'Upload failed'}`;
                   uploadDetails.textContent = 'Please try again or contact support';
                   statusIcon.innerHTML = '❌';
                   uploadButton.disabled = false;
@@ -816,14 +2942,126 @@
               uploadButton.textContent = 'Upload & Index';
           }
       });
-      {% endif %}
 
-      window.onclick = function(event) {
-          const modal = document.getElementById('uploadModal');
-          if (event.target == modal) {
-              closeUploadModal();
+      // Category Management Functions
+      function showCategoryModal() {
+          document.getElementById('categoryModal').style.display = 'flex';
+          loadCategoriesList();
+      }
+
+      function closeCategoryModal() {
+          document.getElementById('categoryModal').style.display = 'none';
+          hideCreateCategoryForm();
+      }
+
+      function showCreateCategoryForm() {
+          document.getElementById('createCategoryForm').style.display = 'block';
+          document.getElementById('categoryName').value = '';
+          document.getElementById('categoryDescription').value = '';
+          document.getElementById('categoryColor').value = '#4F46E5';
+      }
+
+      function hideCreateCategoryForm() {
+          document.getElementById('createCategoryForm').style.display = 'none';
+      }
+
+      async function loadCategoriesList() {
+          try {
+              const response = await fetch('/api/categories');
+              const data = await response.json();
+              if (response.ok && data.categories) {
+                  categories = data.categories;
+                  updateCategorySelect();
+
+                  const listDiv = document.getElementById('categoriesList');
+                  if (listDiv) {
+                      if (categories.length === 0) {
+                          listDiv.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 20px;">No categories yet. Create one to get started!</p>';
+                      } else {
+                          listDiv.innerHTML = categories.map(cat => `
+                              <div style="padding: 12px; margin: 8px 0; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid ${cat.color};">
+                                  <div style="display: flex; justify-content: space-between; align-items: start;">
+                                      <div style="flex: 1;">
+                                          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${cat.color};"></span>
+                                              <strong>${escapeHtml(cat.name)}</strong>
+                                              <span style="color: var(--text-light); font-size: 12px;">(${cat.document_count} documents)</span>
+                                          </div>
+                                          ${cat.description ? `<p style="color: var(--text-light); font-size: 13px; margin: 4px 0;">${escapeHtml(cat.description)}</p>` : ''}
+                                          <p style="color: var(--text-light); font-size: 11px; margin-top: 4px;">Created by ${escapeHtml(cat.created_by)}</p>
+                                      </div>
+                                      <button type="button" class="btn btn-secondary" onclick="deleteCategory(${cat.id})" style="padding: 4px 8px; font-size: 12px;">Delete</button>
+                                  </div>
+                              </div>
+                          `).join('');
+                      }
+                  }
+              }
+          } catch (error) {
+              console.error('Failed to load categories:', error);
           }
       }
+
+      async function createCategory() {
+          const name = document.getElementById('categoryName').value.trim();
+          const description = document.getElementById('categoryDescription').value.trim();
+          const color = document.getElementById('categoryColor').value;
+
+          if (!name) {
+              alert('Category name is required');
+              return;
+          }
+
+          try {
+              const response = await fetch('/api/categories', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ name, description, color })
+              });
+
+              const data = await response.json();
+              if (response.ok) {
+                  showNotification('Category created successfully', 'success');
+                  hideCreateCategoryForm();
+                  loadCategoriesList();
+              } else {
+                  alert(data.error || 'Failed to create category');
+              }
+          } catch (error) {
+              alert('Error creating category: ' + error.message);
+          }
+      }
+
+      async function deleteCategory(categoryId) {
+          if (!confirm('Are you sure you want to delete this category? Documents will be unassigned but not deleted.')) {
+              return;
+          }
+
+          try {
+              const response = await fetch(`/api/categories/${categoryId}`, {
+                  method: 'DELETE'
+              });
+
+              const data = await response.json();
+              if (response.ok) {
+                  showNotification('Category deleted successfully', 'success');
+                  loadCategoriesList();
+              } else {
+                  alert(data.error || 'Failed to delete category');
+              }
+          } catch (error) {
+              alert('Error deleting category: ' + error.message);
+          }
+      }
+
+      // Load categories on page load
+      if (document.getElementById('categorySelect')) {
+          loadCategories();
+      }
+      {% endif %}
+
 
       function fallbackCopyText(text) {
           const textarea = document.createElement('textarea');
@@ -868,6 +3106,277 @@
               copyBtn.innerText = original;
           }, 1200);
       });
+
+      // ========== KEYBOARD SHORTCUTS ==========
+      document.addEventListener('keydown', function(e) {
+          // Ctrl+K or Cmd+K: Focus search
+          if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+              e.preventDefault();
+              document.getElementById('globalSearch').focus();
+          }
+
+          // Ctrl+N or Cmd+N: New conversation
+          if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+              e.preventDefault();
+              createNewConversation();
+          }
+
+          // ? key: Show help
+          if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+              if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                  e.preventDefault();
+                  showHelpModal();
+              }
+          }
+
+          // Escape: Close modals
+          if (e.key === 'Escape') {
+              closeAllModals();
+          }
+      });
+
+      // ========== GLOBAL SEARCH ==========
+      let searchTimeout;
+      const globalSearchInput = document.getElementById('globalSearch');
+      const searchResults = document.getElementById('searchResults');
+
+      globalSearchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          const query = this.value.trim();
+
+          if (query.length < 2) {
+              searchResults.innerHTML = '';
+              searchResults.style.display = 'none';
+              return;
+          }
+
+          searchTimeout = setTimeout(() => {
+              performGlobalSearch(query);
+          }, 300);
+      });
+
+      globalSearchInput.addEventListener('focus', function() {
+          if (this.value.trim().length >= 2) {
+              performGlobalSearch(this.value.trim());
+          }
+      });
+
+      async function performGlobalSearch(query) {
+          try {
+              const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+              const results = await response.json();
+
+              displaySearchResults(results);
+          } catch (error) {
+              console.error('Search error:', error);
+              searchResults.innerHTML = '<div class="search-result-item">Error performing search</div>';
+              searchResults.style.display = 'block';
+          }
+      }
+
+      function displaySearchResults(results) {
+          if (!results || results.length === 0) {
+              searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
+              searchResults.style.display = 'block';
+              return;
+          }
+
+          let html = '';
+          results.forEach(result => {
+              html += `
+                  <div class="search-result-item" onclick="navigateToSearchResult('${result.type}', ${result.id})">
+                      <div class="search-result-icon">${result.type === 'conversation' ? '💬' : '📄'}</div>
+                      <div class="search-result-content">
+                          <div class="search-result-title">${escapeHtml(result.title)}</div>
+                          <div class="search-result-snippet">${escapeHtml(result.snippet || '')}</div>
+                      </div>
+                  </div>
+              `;
+          });
+
+          searchResults.innerHTML = html;
+          searchResults.style.display = 'block';
+      }
+
+      function navigateToSearchResult(type, id) {
+          if (type === 'conversation') {
+              window.location.href = `/chat?conversation_id=${id}`;
+          } else {
+              // Navigate to document view
+              window.location.href = `/dashboard`;
+          }
+          globalSearchInput.value = '';
+          searchResults.style.display = 'none';
+      }
+
+      // Close search results when clicking outside
+      document.addEventListener('click', function(e) {
+          if (!globalSearchInput.contains(e.target) && !searchResults.contains(e.target)) {
+              searchResults.style.display = 'none';
+          }
+      });
+
+      // ========== CONVERSATION EXPORT ==========
+      async function exportConversation(conversationId) {
+          try {
+              const response = await fetch(`/api/conversations/${conversationId}/export?format=markdown`);
+              const data = await response.json();
+
+              // Create download link
+              const blob = new Blob([data.content], { type: data.mime_type });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = data.filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+
+              showNotification('Conversation exported successfully!', 'success');
+          } catch (error) {
+              console.error('Export error:', error);
+              showNotification('Failed to export conversation', 'error');
+          }
+      }
+
+
+      // ========== CITATION DETAILS MODAL ==========
+      function showCitationDetails(index, citation) {
+          const modal = document.getElementById('citationDetailsModal');
+          const content = document.getElementById('citationDetailsContent');
+
+          if (!modal || !content) return;
+
+          // Format the citation details
+          const documentName = citation.source || citation.document || 'Unknown Document';
+          const pageNumber = citation.page || 'N/A';
+          const citationType = citation.type || 'text';
+
+          // Format type display
+          let typeDisplay = 'Text';
+          let typeDescription = 'Text content from the document';
+          if (citationType.toLowerCase().includes('image')) {
+              if (citationType.toLowerCase().includes('caption')) {
+                  typeDisplay = 'Image Caption';
+                  typeDescription = 'Technical caption generated by vision model describing the image';
+              } else if (citationType.toLowerCase().includes('ocr')) {
+                  typeDisplay = 'Image OCR';
+                  typeDescription = 'Text extracted from the image using OCR technology';
+              } else {
+                  typeDisplay = 'Image';
+                  typeDescription = 'Image content from the document';
+              }
+          }
+
+          content.innerHTML = `
+              <div class="citation-detail-section">
+                  <div class="citation-detail-label">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                      </svg>
+                      <span>Document Name</span>
+                  </div>
+                  <div class="citation-detail-value">${escapeHtml(documentName)}</div>
+              </div>
+
+              <div class="citation-detail-section">
+                  <div class="citation-detail-label">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="9" y1="3" x2="9" y2="21"></line>
+                      </svg>
+                      <span>Page Number</span>
+                  </div>
+                  <div class="citation-detail-value">${pageNumber}</div>
+              </div>
+
+              <div class="citation-detail-section">
+                  <div class="citation-detail-label">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="12" y1="16" x2="12" y2="12"></line>
+                          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      <span>Content Type</span>
+                  </div>
+                  <div class="citation-detail-value">
+                      <span class="citation-type-badge citation-type-${citationType.toLowerCase().replace(/\s+/g, '-')}">${typeDisplay}</span>
+                      <div class="citation-type-description">${typeDescription}</div>
+                  </div>
+              </div>
+
+              <div class="citation-detail-footer">
+                  <div class="citation-reference-info">
+                      <strong>Reference Format:</strong>
+                      <div class="citation-reference-example">
+                          Document: ${escapeHtml(documentName)}<br>
+                          Page: ${pageNumber}<br>
+                          Type: ${typeDisplay}
+                      </div>
+                  </div>
+              </div>
+          `;
+
+          modal.style.display = 'flex';
+      }
+
+      function closeCitationDetailsModal() {
+          const modal = document.getElementById('citationDetailsModal');
+          if (modal) {
+              modal.style.display = 'none';
+          }
+      }
+
+      // ========== HELP MODAL ==========
+      function showHelpModal() {
+          document.getElementById('helpModal').style.display = 'flex';
+      }
+
+      function closeHelpModal() {
+          document.getElementById('helpModal').style.display = 'none';
+      }
+
+      function closeAllModals() {
+          document.getElementById('helpModal').style.display = 'none';
+          document.getElementById('settingsModal').style.display = 'none';
+          document.getElementById('uploadModal').style.display = 'none';
+      }
+
+      // ========== ENHANCED NOTIFICATION SYSTEM ==========
+      function showNotification(message, type = 'info', duration = 3000) {
+          const notification = document.createElement('div');
+          notification.className = `notification notification-${type}`;
+
+          // Add icon based on type
+          let icon = '';
+          if (type === 'success') {
+              icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+              notification.classList.add('success-toast');
+          } else if (type === 'error') {
+              icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+          } else if (type === 'warning') {
+              icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+          } else {
+              icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+          }
+
+          notification.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 12px;">
+                  ${icon}
+                  <span>${escapeHtml(message)}</span>
+              </div>
+          `;
+
+          document.body.appendChild(notification);
+
+          setTimeout(() => notification.classList.add('show'), 10);
+          setTimeout(() => {
+              notification.classList.remove('show');
+              setTimeout(() => notification.remove(), 300);
+          }, duration);
+      }
     </script>
   </body>
 </html>

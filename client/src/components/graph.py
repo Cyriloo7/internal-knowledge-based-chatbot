@@ -13,17 +13,19 @@ from PIL import Image
 
 from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, SystemMessage
 from langchain_core.tools import tool
+from langchain_core.callbacks import BaseCallbackHandler
+from typing import Any, Dict, List
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langgraph.checkpoint.memory import MemorySaver
 
 
 memory = MemorySaver()
-
-from langchain_core.tools import tool
 
 def make_document_search_tool(retriever):
     @tool
@@ -35,7 +37,7 @@ def make_document_search_tool(retriever):
             for doc in results
         )
         return combined_text
-
+    
     return document_search_tool
 
 
@@ -43,21 +45,67 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
-class RAG_Agent(StateGraph[AgentState]):
-    def __init__(self, vector_store, thread_id="default"):
-        load_dotenv()
+class StreamingHandler(BaseCallbackHandler):
+    """Callback handler for streaming tokens"""
+    def __init__(self):
+        self.tokens = []
+        self.current_token = ""
+        
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Called when a new token is generated"""
+        self.tokens.append(token)
+        self.current_token = token
 
-        llm = ChatGoogleGenerativeAI(model="gemini-3-pro-preview",
-            temperature=1.0,  # Gemini 3.0+ defaults to 1.0
-            max_tokens=None,
-            timeout=None,
-            max_retries=2
-        )
+class RAG_Agent(StateGraph[AgentState]):
+    def __init__(self, vector_store, thread_id="default", streaming_callback=None, 
+                 model="gemini-3-pro-preview", temperature=1.0):
+        load_dotenv()
+        
+        # Debug: Log the model being used
+        print(f"DEBUG RAG_Agent: Initializing with model: {model}, temperature: {temperature}")
+
+        # Determine which LLM provider to use based on model name
+        if model.startswith("gpt-") or model.startswith("o1-") or model.startswith("o3-"):
+            print(f"DEBUG RAG_Agent: Using OpenAI model: {model}")
+            # OpenAI models (ChatGPT)
+            import os
+            if not os.getenv('OPENAI_API_KEY'):
+                raise ValueError("OPENAI_API_KEY not found in environment variables. Please add it to your .env file.")
+            llm = ChatOpenAI(
+                model=model,
+                temperature=temperature,
+                max_retries=2
+            )
+        elif model.startswith("claude-") or model.startswith("sonnet-") or model.startswith("opus-") or model.startswith("haiku-"):
+            print(f"DEBUG RAG_Agent: Using Anthropic model: {model}")
+            # Anthropic models (Claude)
+            import os
+            if not os.getenv('ANTHROPIC_API_KEY'):
+                raise ValueError("ANTHROPIC_API_KEY not found in environment variables. Please add it to your .env file.")
+            llm = ChatAnthropic(
+                model=model,
+                temperature=temperature,
+                max_retries=2
+            )
+        else:
+            print(f"DEBUG RAG_Agent: Using Google Gemini model (default): {model}")
+            # Google Gemini models (default)
+            import os
+            if not os.getenv('GOOGLE_API_KEY'):
+                raise ValueError("GOOGLE_API_KEY not found in environment variables. Please add it to your .env file.")
+            llm = ChatGoogleGenerativeAI(
+                model=model,
+                temperature=temperature,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2
+            )
         self.config = {"configurable": {"thread_id": thread_id}}
         self.retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5})
         self.document_search_tool = make_document_search_tool(self.retriever)
         self.tools =[self.document_search_tool]
         self.llm = llm.bind_tools(self.tools)
+        self.streaming_callback = streaming_callback
         self.tools_dict  = {our_tool.name: our_tool for our_tool in self.tools}
 
         self.system_prompt = """You are an intelligent document-aware AI assistant.
@@ -125,7 +173,14 @@ class RAG_Agent(StateGraph[AgentState]):
         """Call the LLM with the current state messages"""
         messages = list(state["messages"])
         messages = [SystemMessage(content=self.system_prompt)]+messages
-        message = self.llm.invoke(messages)
+        
+        # Use streaming if callback is provided
+        if self.streaming_callback:
+            # Pass callbacks directly to invoke method
+            message = self.llm.invoke(messages, callbacks=[self.streaming_callback])
+        else:
+            message = self.llm.invoke(messages)
+        
         return {"messages": [message]}
 
 
@@ -135,16 +190,33 @@ class RAG_Agent(StateGraph[AgentState]):
 
         tool_calls = state["messages"][-1].tool_calls
         results = []
+        retrieved_docs = []  # Store retrieved documents for citation extraction
+        
         for t in tool_calls:
             # print(t)
             # break
             if not t['name'] in self.tools_dict:
                 print(f"Tool {t['name']} not found")
 
-            tool_output  = self.tools_dict[t['name']].invoke(t['args'])
+            if t['name'] == 'document_search_tool':
+                # For document search, capture the retrieved documents
+                query = t['args'].get('query', '')
+                docs = self.retriever.invoke(query)
+                retrieved_docs.extend(docs)  # Store for citation extraction
+                
+                # Create the tool output with metadata
+                combined_text = "\n".join(
+                    f"{doc.page_content}\nMETADATA: {doc.metadata}"
+                    for doc in docs
+                )
+                tool_output = combined_text
+            else:
+                tool_output = self.tools_dict[t['name']].invoke(t['args'])
 
-            results.append(ToolMessage(tool_call_id = t['id'], name=t['name'], content=str(tool_output)))
-        return {"messages": results}
+            results.append(ToolMessage(tool_call_id=t['id'], name=t['name'], content=str(tool_output)))
+        
+        # Store retrieved documents in state for citation extraction
+        return {"messages": results, "retrieved_docs": retrieved_docs}
 
     def langgraph_graph(self):
         graph = StateGraph(AgentState)

@@ -101,10 +101,67 @@ class Indexer:
         else:
             raise ValueError(f"Unsupported file format: {self.file_ext}")
     
-    def index_document(self, level):
-        """Index a document into the vector store"""
+    def delete_document_from_index(self, level, file_path=None):
+        """Delete all chunks of a document from the vector store"""
+        if file_path is None:
+            file_path = self.file_path
+        
+        vectorstorepath = "chroma_vectorstore"
+        collection_name = level
+        path = os.path.join(os.getcwd(), vectorstorepath, collection_name)
+        
+        if not os.path.exists(path):
+            print(f"⚠️ Vector store path does not exist: {path}")
+            return 0
+        
+        try:
+            vector_store = Chroma(
+                collection_name=collection_name,
+                embedding_function=self.embeddings,
+                persist_directory=path,
+            )
+            
+            # Get all documents from the collection
+            all_docs = vector_store._collection.get(include=['metadatas'])
+            
+            # Find document IDs that match the source file path
+            ids_to_delete = []
+            if all_docs and 'metadatas' in all_docs:
+                for idx, metadata in enumerate(all_docs['metadatas']):
+                    if metadata and metadata.get('source') == file_path:
+                        ids_to_delete.append(all_docs['ids'][idx])
+            
+            # Delete matching documents from Chroma
+            if ids_to_delete:
+                vector_store._collection.delete(ids=ids_to_delete)
+                print(f"✅ Deleted {len(ids_to_delete)} document chunks from Chroma vector store for: {file_path}")
+                return len(ids_to_delete)
+            else:
+                print(f"⚠️ No matching chunks found for: {file_path}")
+                return 0
+                
+        except Exception as e:
+            print(f"⚠️ Error deleting from vector store: {e}")
+            raise RuntimeError(f"Failed to delete document from vector store: {e}")
+
+    def index_document(self, level, replace_existing=False):
+        """Index a document into the vector store
+        
+        Args:
+            level: Collection level name
+            replace_existing: If True, delete existing chunks before indexing
+        """
         if not os.path.exists(self.file_path):
             raise FileNotFoundError(f"The file {self.file_path} does not exist.")
+
+        # If replacing, delete old chunks first
+        if replace_existing:
+            try:
+                deleted_count = self.delete_document_from_index(level, self.file_path)
+                print(f"🗑️ Removed {deleted_count} old chunks before re-indexing")
+            except Exception as e:
+                print(f"⚠️ Warning: Could not delete old chunks: {e}")
+                # Continue with indexing anyway
 
         # Load document based on file type
         try:
@@ -148,23 +205,33 @@ class Indexer:
             embedding_function=self.embeddings,
             persist_directory=path,
         )
-        existing = vector_store._collection.get(include=[])
-        existing_ids = set(existing["ids"])
+        
+        # If replacing, we already deleted old chunks, so add all new ones
+        if replace_existing:
+            try:
+                vector_store.add_documents(all_docs, ids=ids)
+                print(f"✅ Re-indexed {len(all_docs)} document chunks into collection '{collection_name}'")
+            except Exception as e:
+                raise RuntimeError(f"Failed to re-index document: {e}")
+        else:
+            # Original logic: only add new documents
+            existing = vector_store._collection.get(include=[])
+            existing_ids = set(existing["ids"])
 
-        new_docs = []
-        new_ids = []
+            new_docs = []
+            new_ids = []
 
-        for doc, id_ in zip(all_docs, ids):
-            if id_ not in existing_ids:
-                new_docs.append(doc)
-                new_ids.append(id_)
+            for doc, id_ in zip(all_docs, ids):
+                if id_ not in existing_ids:
+                    new_docs.append(doc)
+                    new_ids.append(id_)
 
-        try:
-            if new_docs:
-                vector_store.add_documents(new_docs, ids=new_ids)
-                print(f"✅ Indexed {len(new_docs)} new documents into collection '{collection_name}'")
-            else:
-                print("✅ No new documents to add")
+            try:
+                if new_docs:
+                    vector_store.add_documents(new_docs, ids=new_ids)
+                    print(f"✅ Indexed {len(new_docs)} new documents into collection '{collection_name}'")
+                else:
+                    print("✅ No new documents to add")
 
-        except Exception as e:
-            raise RuntimeError(f"Failed to create or persist Chroma vector store: {e}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to create or persist Chroma vector store: {e}")
