@@ -63,6 +63,7 @@ class User(db.Model):
     role = db.Column(db.String(20), nullable=False)  # user, b-manager, a-manager, admin
     created_at = db.Column(db.DateTime, default=utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    session_version = db.Column(db.Integer, default=0)  # Incremented to invalidate all sessions
 
 class UserSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -170,6 +171,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user_id = session.get('user_id')
+        session_version = session.get('session_version')
 
         if not user_id:
             session.clear()
@@ -184,6 +186,14 @@ def login_required(f):
             # Check if this is an API request
             if request.path.startswith('/api/'):
                 return jsonify({'error': 'User not found'}), 401
+            return redirect(url_for('login'))
+
+        # Check if user is active and session version matches
+        if not user.is_active or session_version != user.session_version:
+            session.clear()
+            # Check if this is an API request
+            if request.path.startswith('/api/'):
+                return jsonify({'error': 'Session invalidated. Please log in again.'}), 401
             return redirect(url_for('login'))
 
         return f(*args, **kwargs)
@@ -230,6 +240,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
+            session['session_version'] = user.session_version  # Store session version
             return jsonify({
                 'success': True,
                 'role': user.role,
@@ -1394,10 +1405,16 @@ def manage_user(user_id):
     
     if request.method == 'PUT':
         data = request.get_json()
+        was_active = user.is_active
         if 'role' in data:
             user.role = data['role']
         if 'is_active' in data:
-            user.is_active = data['is_active']
+            new_active_status = data['is_active']
+            user.is_active = new_active_status
+            # Increment session_version whenever is_active changes to invalidate all sessions
+            # This ensures users are logged out from all devices when status changes
+            if was_active != new_active_status:
+                user.session_version = (user.session_version or 0) + 1
         db.session.commit()
         return jsonify({'success': True})
     
@@ -2024,6 +2041,22 @@ def init_db():
             # Create all tables
             db.create_all()
             print("✅ Database tables initialized successfully")
+            
+            # Migrate existing database: Add session_version column if it doesn't exist
+            try:
+                from sqlalchemy import inspect, text
+                inspector = inspect(db.engine)
+                columns = [col['name'] for col in inspector.get_columns('user')]
+                if 'session_version' not in columns:
+                    # Add session_version column for session invalidation
+                    with db.engine.connect() as conn:
+                        conn.execute(text('ALTER TABLE user ADD COLUMN session_version INTEGER DEFAULT 0'))
+                        conn.commit()
+                    print("✅ Added session_version column to user table")
+            except Exception as migration_error:
+                # Column might already exist or migration not needed
+                # This is expected if the column already exists or if using a fresh database
+                pass
             
             # Create database indexes for optimization
             if OPTIMIZATIONS_ENABLED:
