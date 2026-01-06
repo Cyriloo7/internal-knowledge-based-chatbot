@@ -989,6 +989,19 @@
               <div class="progress-fill" id="progressFill"></div>
             </div>
           </div>
+          <div id="uploadErrors" style="display: none; margin-top: 15px; padding: 12px; background: var(--error-bg, #fee); border: 1px solid var(--error-border, #fcc); border-radius: 6px; max-height: 200px; overflow-y: auto;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px; color: var(--error-text, #c33); font-weight: 600;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Upload Errors:</span>
+            </div>
+            <ul id="uploadErrorsList" style="margin: 0; padding-left: 20px; color: var(--error-text, #c33);">
+              <!-- Error messages will be inserted here -->
+            </ul>
+          </div>
           <button type="submit" class="btn btn-primary" id="uploadButton">
             Upload & Index
           </button>
@@ -2749,7 +2762,41 @@
       }
 
       function closeUploadModal() {
-          document.getElementById('uploadModal').style.display = 'none';
+          const uploadModal = document.getElementById('uploadModal');
+          const uploadForm = document.getElementById('uploadForm');
+          const uploadProgress = document.getElementById('uploadProgress');
+          const uploadErrors = document.getElementById('uploadErrors');
+          const uploadErrorsList = document.getElementById('uploadErrorsList');
+          const uploadButton = document.getElementById('uploadButton');
+          const fileInput = document.getElementById('pdfFile');
+          
+          uploadModal.style.display = 'none';
+          
+          // Reset form and error display
+          if (uploadForm) {
+              uploadForm.reset();
+          }
+          if (uploadProgress) {
+              uploadProgress.style.display = 'none';
+          }
+          if (uploadErrors) {
+              uploadErrors.style.display = 'none';
+          }
+          if (uploadErrorsList) {
+              uploadErrorsList.innerHTML = '';
+          }
+          if (uploadButton) {
+              uploadButton.disabled = false;
+              uploadButton.textContent = 'Upload & Index';
+              uploadButton.onclick = null;
+          }
+          if (fileInput) {
+              fileInput.value = '';
+              const fileList = document.getElementById('fileList');
+              if (fileList) {
+                  fileList.innerHTML = '';
+              }
+          }
       }
 
       {% if user.role in ['b-manager', 'a-manager', 'admin'] %}
@@ -2872,6 +2919,16 @@
           const uploadButton = document.getElementById('uploadButton');
           const statusIcon = document.getElementById('statusIcon');
           const fileInput = document.getElementById('pdfFile');
+          const uploadErrors = document.getElementById('uploadErrors');
+          const uploadErrorsList = document.getElementById('uploadErrorsList');
+
+          // Clear previous errors
+          if (uploadErrors) {
+              uploadErrors.style.display = 'none';
+          }
+          if (uploadErrorsList) {
+              uploadErrorsList.innerHTML = '';
+          }
 
           if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
               alert('Please select at least one file');
@@ -2882,6 +2939,7 @@
           uploadProgress.style.display = 'block';
           uploadButton.disabled = true;
           uploadButton.textContent = 'Processing...';
+          uploadButton.onclick = null; // Clear any previous onclick handler
           statusIcon.innerHTML = '<div class="spinner-small"></div>';
 
           uploadStatus.textContent = `Processing ${fileCount} file(s)...`;
@@ -2902,6 +2960,12 @@
               });
 
               const data = await response.json();
+              const uploadErrors = document.getElementById('uploadErrors');
+              const uploadErrorsList = document.getElementById('uploadErrorsList');
+
+              // Hide errors initially
+              uploadErrors.style.display = 'none';
+              uploadErrorsList.innerHTML = '';
 
               if (response.ok && data.success) {
                   uploadStatus.textContent = 'Indexing documents...';
@@ -2912,25 +2976,64 @@
                   const uploadedCount = data.uploaded_files ? data.uploaded_files.length : 0;
                   const failedCount = data.failed_files ? data.failed_files.length : 0;
 
-                  uploadStatus.textContent = `Upload successful! ${uploadedCount} file(s) indexed`;
                   if (failedCount > 0) {
-                      uploadDetails.textContent = `${failedCount} file(s) failed. Check console for details.`;
-                      console.error('Failed files:', data.failed_files);
+                      uploadStatus.textContent = `Upload completed with ${failedCount} error(s)`;
+                      uploadDetails.textContent = `${uploadedCount} file(s) uploaded successfully, ${failedCount} file(s) failed`;
                       statusIcon.innerHTML = '⚠️';
+                      
+                      // Display failed files with error messages
+                      uploadErrors.style.display = 'block';
+                      data.failed_files.forEach(failedFile => {
+                          const listItem = document.createElement('li');
+                          listItem.style.marginBottom = '6px';
+                          listItem.innerHTML = `<strong>${failedFile.filename}:</strong> ${failedFile.error || 'Upload failed'}`;
+                          uploadErrorsList.appendChild(listItem);
+                      });
                   } else {
+                      uploadStatus.textContent = `Upload successful! ${uploadedCount} file(s) indexed`;
                       uploadDetails.textContent = 'All documents indexed and ready for queries';
                       statusIcon.innerHTML = '✅';
                   }
                   uploadButton.textContent = 'Complete';
 
                   setTimeout(() => {
-                      closeUploadModal();
-                      location.reload();
-                  }, 2000);
+                      if (failedCount === 0) {
+                          closeUploadModal();
+                          location.reload();
+                      } else {
+                          // Keep modal open if there are errors so user can see them
+                          uploadButton.disabled = false;
+                          uploadButton.textContent = 'Close';
+                          uploadButton.onclick = () => {
+                              closeUploadModal();
+                              location.reload();
+                          };
+                      }
+                  }, failedCount > 0 ? 0 : 2000);
               } else {
                   uploadStatus.textContent = `Error: ${data.error || 'Upload failed'}`;
-                  uploadDetails.textContent = 'Please try again or contact support';
+                  uploadDetails.textContent = 'Please check the errors below and try again';
                   statusIcon.innerHTML = '❌';
+                  
+                  // Display error message
+                  if (data.error) {
+                      uploadErrors.style.display = 'block';
+                      const listItem = document.createElement('li');
+                      listItem.innerHTML = data.error;
+                      uploadErrorsList.appendChild(listItem);
+                  }
+                  
+                  // Display failed files if any
+                  if (data.failed_files && data.failed_files.length > 0) {
+                      uploadErrors.style.display = 'block';
+                      data.failed_files.forEach(failedFile => {
+                          const listItem = document.createElement('li');
+                          listItem.style.marginBottom = '6px';
+                          listItem.innerHTML = `<strong>${failedFile.filename}:</strong> ${failedFile.error || 'Upload failed'}`;
+                          uploadErrorsList.appendChild(listItem);
+                      });
+                  }
+                  
                   uploadButton.disabled = false;
                   uploadButton.textContent = 'Upload & Index';
               }

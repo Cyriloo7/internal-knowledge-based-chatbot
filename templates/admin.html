@@ -407,6 +407,7 @@
             <table class="data-table" id="usersTable">
               <thead>
                 <tr>
+                  <th style="width: 60px;">#</th>
                   <th
                     class="table-header-sortable"
                     onclick="sortTable('users', 'id')"
@@ -455,6 +456,7 @@
               <tbody id="usersTableBody">
                 {% for user in users %}
                 <tr>
+                  <td class="row-number">{{ loop.index }}</td>
                   <td>{{ user.id }}</td>
                   <td><strong>{{ user.username }}</strong></td>
                   <td>{{ user.email }}</td>
@@ -569,6 +571,7 @@
             <table class="data-table" id="documentsTable">
               <thead>
                 <tr>
+                  <th style="width: 60px;">#</th>
                   <th
                     class="table-header-sortable"
                     onclick="sortTable('documents', 'id')"
@@ -617,6 +620,7 @@
               <tbody id="documentsTableBody">
                 {% for doc in documents %}
                 <tr>
+                  <td class="row-number">{{ loop.index }}</td>
                   <td>{{ doc.id }}</td>
                   <td>{{ doc.filename }}</td>
                   <td>
@@ -722,6 +726,7 @@
             <table class="data-table" id="conversationsTable">
               <thead>
                 <tr>
+                  <th style="width: 60px;">#</th>
                   <th
                     class="table-header-sortable"
                     onclick="sortTable('conversations', 'id')"
@@ -770,6 +775,7 @@
               <tbody id="conversationsTableBody">
                 {% for conv in conversations %}
                 <tr>
+                  <td class="row-number">{{ loop.index }}</td>
                   <td>{{ conv.id }}</td>
                   <td><strong>{{ conv.user_id }}</strong></td>
                   <td>{{ conv.title }}</td>
@@ -846,6 +852,7 @@
             <table class="data-table" id="historyTable">
               <thead>
                 <tr>
+                  <th style="width: 60px;">#</th>
                   <th
                     class="table-header-sortable"
                     onclick="sortTable('history', 'id')"
@@ -888,6 +895,7 @@
               <tbody id="historyTableBody">
                 {% for history in chat_history %}
                 <tr>
+                  <td class="row-number">{{ loop.index }}</td>
                   <td>{{ history.id }}</td>
                   <td><strong>{{ history.user_id }}</strong></td>
                   <td>
@@ -1370,7 +1378,53 @@
         });
 
         document.getElementById(tabName + "Tab").classList.add("active");
-        event.target.classList.add("active");
+        if (event && event.target) {
+          event.target.classList.add("active");
+        } else {
+          // If called programmatically, find the button and activate it
+          const buttons = document.querySelectorAll(".tab-button");
+          buttons.forEach((btn) => {
+            if (btn.getAttribute("onclick") === `showTab('${tabName}')`) {
+              btn.classList.add("active");
+            }
+          });
+        }
+        
+        // Store active tab in sessionStorage
+        sessionStorage.setItem('adminActiveTab', tabName);
+      }
+      
+      // Restore active tab on page load
+      function restoreActiveTab() {
+        const savedTab = sessionStorage.getItem('adminActiveTab');
+        if (savedTab) {
+          // Small delay to ensure DOM is ready
+          setTimeout(() => {
+            showTab(savedTab);
+          }, 100);
+        }
+      }
+      
+      // Run on both DOMContentLoaded and window load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', restoreActiveTab);
+      } else {
+        restoreActiveTab();
+      }
+      window.addEventListener('load', restoreActiveTab);
+
+      // Renumber rows in a table
+      function renumberRows(tableType) {
+        const tbody = document.getElementById(tableType + "TableBody");
+        if (!tbody) return;
+        
+        const visibleRows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"])'));
+        visibleRows.forEach((row, index) => {
+          const rowNumberCell = row.querySelector('.row-number');
+          if (rowNumberCell) {
+            rowNumberCell.textContent = index + 1;
+          }
+        });
       }
 
       // Filter table function
@@ -1422,7 +1476,7 @@
               .join(" ");
             // For documents, also search in category name
             if (tableType === "documents") {
-              const categoryCell = cells[3];
+              const categoryCell = cells[4]; // Category is now at index 4 after "#" column
               if (categoryCell) {
                 const categoryText = categoryCell.textContent.toLowerCase();
                 const fullText = rowText + " " + categoryText;
@@ -1439,7 +1493,7 @@
 
           // Role filter (users only)
           if (tableType === "users" && roleFilter) {
-            const roleCell = cells[3]?.textContent.trim().toLowerCase();
+            const roleCell = cells[4]?.textContent.trim().toLowerCase(); // Shifted by +1 for "#" column
             if (roleCell !== roleFilter.toLowerCase()) {
               visible = false;
             }
@@ -1447,7 +1501,7 @@
 
           // Status filter (users only)
           if (tableType === "users" && statusFilter) {
-            const statusCell = cells[4]?.textContent.trim().toLowerCase();
+            const statusCell = cells[5]?.textContent.trim().toLowerCase(); // Shifted by +1 for "#" column
             if (statusFilter === "active" && statusCell !== "active") {
               visible = false;
             } else if (
@@ -1462,11 +1516,11 @@
           if (collectionFilter) {
             let collectionCell = null;
             if (tableType === "documents") {
-              collectionCell = cells[2]?.textContent.trim().toLowerCase();
+              collectionCell = cells[3]?.textContent.trim().toLowerCase(); // Shifted by +1
             } else if (tableType === "conversations") {
-              collectionCell = cells[3]?.textContent.trim().toLowerCase();
+              collectionCell = cells[4]?.textContent.trim().toLowerCase(); // Shifted by +1
             } else if (tableType === "history") {
-              collectionCell = cells[4]?.textContent.trim().toLowerCase();
+              collectionCell = cells[5]?.textContent.trim().toLowerCase(); // Shifted by +1
             }
             if (
               collectionCell &&
@@ -1478,7 +1532,7 @@
 
           // Category filter (documents only)
           if (tableType === "documents" && categoryFilter) {
-            const categoryCell = cells[3]; // Category is in the 4th column (index 3)
+            const categoryCell = cells[4]; // Category is now in the 5th column (index 4) after "#" column
             if (categoryCell) {
               const categoryId = categoryCell.getAttribute('data-category-id');
               // If filter is set and category ID doesn't match, hide the row
@@ -1500,6 +1554,9 @@
           row.style.display = visible ? "" : "none";
           if (visible) visibleCount++;
         });
+
+        // Renumber visible rows
+        renumberRows(tableType);
 
         // Show empty state if no results
         showEmptyState(tbody, visibleCount === 0);
@@ -1556,32 +1613,32 @@
           const aCells = a.querySelectorAll("td");
           const bCells = b.querySelectorAll("td");
 
-          // Get values based on column
+          // Get values based on column (accounting for "#" column at index 0)
           if (tableType === "users") {
             switch (column) {
               case "id":
-                aVal = parseInt(aCells[0]?.textContent);
-                bVal = parseInt(bCells[0]?.textContent);
+                aVal = parseInt(aCells[1]?.textContent); // ID is now at index 1
+                bVal = parseInt(bCells[1]?.textContent);
                 break;
               case "username":
-                aVal = aCells[1]?.textContent.trim().toLowerCase();
-                bVal = bCells[1]?.textContent.trim().toLowerCase();
-                break;
-              case "email":
-                aVal = aCells[2]?.textContent.trim().toLowerCase();
+                aVal = aCells[2]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[2]?.textContent.trim().toLowerCase();
                 break;
-              case "role":
-                aVal = aCells[3]?.textContent.trim().toLowerCase();
+              case "email":
+                aVal = aCells[3]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[3]?.textContent.trim().toLowerCase();
                 break;
-              case "status":
-                aVal = aCells[4]?.textContent.trim().toLowerCase();
+              case "role":
+                aVal = aCells[4]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[4]?.textContent.trim().toLowerCase();
                 break;
+              case "status":
+                aVal = aCells[5]?.textContent.trim().toLowerCase(); // Shifted by +1
+                bVal = bCells[5]?.textContent.trim().toLowerCase();
+                break;
               case "created":
-                aVal = new Date(aCells[5]?.textContent);
-                bVal = new Date(bCells[5]?.textContent);
+                aVal = new Date(aCells[6]?.textContent); // Shifted by +1
+                bVal = new Date(bCells[6]?.textContent);
                 break;
               default:
                 return 0;
@@ -1589,24 +1646,28 @@
           } else if (tableType === "documents") {
             switch (column) {
               case "id":
-                aVal = parseInt(aCells[0]?.textContent);
-                bVal = parseInt(bCells[0]?.textContent);
+                aVal = parseInt(aCells[1]?.textContent); // ID is now at index 1
+                bVal = parseInt(bCells[1]?.textContent);
                 break;
               case "filename":
-                aVal = aCells[1]?.textContent.trim().toLowerCase();
-                bVal = bCells[1]?.textContent.trim().toLowerCase();
-                break;
-              case "collection":
-                aVal = aCells[2]?.textContent.trim().toLowerCase();
+                aVal = aCells[2]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[2]?.textContent.trim().toLowerCase();
                 break;
-              case "uploaded_by":
-                aVal = aCells[3]?.textContent.trim().toLowerCase();
+              case "collection":
+                aVal = aCells[3]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[3]?.textContent.trim().toLowerCase();
                 break;
+              case "category":
+                aVal = aCells[4]?.textContent.trim().toLowerCase(); // Shifted by +1
+                bVal = bCells[4]?.textContent.trim().toLowerCase();
+                break;
+              case "uploaded_by":
+                aVal = aCells[5]?.textContent.trim().toLowerCase(); // Shifted by +1
+                bVal = bCells[5]?.textContent.trim().toLowerCase();
+                break;
               case "uploaded_at":
-                aVal = new Date(aCells[4]?.textContent);
-                bVal = new Date(bCells[4]?.textContent);
+                aVal = new Date(aCells[6]?.textContent); // Shifted by +1
+                bVal = new Date(bCells[6]?.textContent);
                 break;
               default:
                 return 0;
@@ -1614,28 +1675,28 @@
           } else if (tableType === "conversations") {
             switch (column) {
               case "id":
-                aVal = parseInt(aCells[0]?.textContent);
-                bVal = parseInt(bCells[0]?.textContent);
+                aVal = parseInt(aCells[1]?.textContent); // ID is now at index 1
+                bVal = parseInt(bCells[1]?.textContent);
                 break;
               case "user":
-                aVal = aCells[1]?.textContent.trim().toLowerCase();
-                bVal = bCells[1]?.textContent.trim().toLowerCase();
-                break;
-              case "title":
-                aVal = aCells[2]?.textContent.trim().toLowerCase();
+                aVal = aCells[2]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[2]?.textContent.trim().toLowerCase();
                 break;
-              case "collection":
-                aVal = aCells[3]?.textContent.trim().toLowerCase();
+              case "title":
+                aVal = aCells[3]?.textContent.trim().toLowerCase(); // Shifted by +1
                 bVal = bCells[3]?.textContent.trim().toLowerCase();
                 break;
+              case "collection":
+                aVal = aCells[4]?.textContent.trim().toLowerCase(); // Shifted by +1
+                bVal = bCells[4]?.textContent.trim().toLowerCase();
+                break;
               case "created":
-                aVal = new Date(aCells[4]?.textContent);
-                bVal = new Date(bCells[4]?.textContent);
+                aVal = new Date(aCells[5]?.textContent); // Shifted by +1
+                bVal = new Date(bCells[5]?.textContent);
                 break;
               case "updated":
-                aVal = new Date(aCells[5]?.textContent);
-                bVal = new Date(bCells[5]?.textContent);
+                aVal = new Date(aCells[6]?.textContent); // Shifted by +1
+                bVal = new Date(bCells[6]?.textContent);
                 break;
               default:
                 return 0;
@@ -1643,30 +1704,30 @@
           } else if (tableType === "history") {
             switch (column) {
               case "id":
-                aVal = parseInt(aCells[0]?.textContent);
-                bVal = parseInt(bCells[0]?.textContent);
+                aVal = parseInt(aCells[1]?.textContent); // ID is now at index 1
+                bVal = parseInt(bCells[1]?.textContent);
                 break;
               case "user":
-                aVal = aCells[1]?.textContent.trim().toLowerCase();
-                bVal = bCells[1]?.textContent.trim().toLowerCase();
+                aVal = aCells[2]?.textContent.trim().toLowerCase(); // Shifted by +1
+                bVal = bCells[2]?.textContent.trim().toLowerCase();
                 break;
               case "conversation_id":
                 aVal =
-                  aCells[2]?.textContent.trim() === "N/A"
+                  aCells[3]?.textContent.trim() === "N/A" // Shifted by +1
                     ? 0
-                    : parseInt(aCells[2]?.textContent);
+                    : parseInt(aCells[3]?.textContent);
                 bVal =
-                  bCells[2]?.textContent.trim() === "N/A"
+                  bCells[3]?.textContent.trim() === "N/A"
                     ? 0
-                    : parseInt(bCells[2]?.textContent);
+                    : parseInt(bCells[3]?.textContent);
                 break;
               case "collection":
-                aVal = aCells[4]?.textContent.trim().toLowerCase();
-                bVal = bCells[4]?.textContent.trim().toLowerCase();
+                aVal = aCells[5]?.textContent.trim().toLowerCase(); // Shifted by +1
+                bVal = bCells[5]?.textContent.trim().toLowerCase();
                 break;
               case "timestamp":
-                aVal = new Date(aCells[5]?.textContent);
-                bVal = new Date(bCells[5]?.textContent);
+                aVal = new Date(aCells[6]?.textContent); // Shifted by +1
+                bVal = new Date(bCells[6]?.textContent);
                 break;
               default:
                 return 0;
@@ -1681,6 +1742,9 @@
 
         // Re-append sorted rows
         rows.forEach((row) => tbody.appendChild(row));
+        
+        // Renumber visible rows after sorting
+        renumberRows(tableType);
       }
 
       function showAddUserModal() {
@@ -1925,6 +1989,9 @@
             }
 
             if (response.ok) {
+              // Store current active tab before reload
+              storeActiveTab();
+              
               if (reindex && newCollection !== originalCollection) {
                 alert("Document updated and re-indexed successfully!");
               } else {
@@ -1957,6 +2024,29 @@
           }
         });
 
+      // Helper function to store current active tab
+      function storeActiveTab() {
+        // First try to get from active tab button
+        const activeTab = document.querySelector('.tab-button.active');
+        if (activeTab) {
+          const tabName = activeTab.getAttribute('onclick');
+          if (tabName) {
+            const match = tabName.match(/showTab\('(\w+)'\)/);
+            if (match) {
+              sessionStorage.setItem('adminActiveTab', match[1]);
+              return;
+            }
+          }
+        }
+        // Fallback: check which tab content is active
+        const activeTabContent = document.querySelector('.tab-content.active');
+        if (activeTabContent) {
+          const tabId = activeTabContent.id;
+          const tabName = tabId.replace('Tab', '');
+          sessionStorage.setItem('adminActiveTab', tabName);
+        }
+      }
+
       // Delete Document
       function deleteDocument(docId) {
         if (
@@ -1966,6 +2056,9 @@
         ) {
           return;
         }
+
+        // Store current active tab before reload
+        storeActiveTab();
 
         fetch(`/api/documents/${docId}`, {
           method: "DELETE",

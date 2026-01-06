@@ -1063,14 +1063,20 @@ def upload_document():
 
             filepath = os.path.join(level_folder, filename)
             
-            # Handle duplicate filenames
-            if os.path.exists(filepath):
-                base_name, ext = os.path.splitext(filename)
-                counter = 1
-                while os.path.exists(filepath):
-                    filename = f"{base_name}_{counter}{ext}"
-                    filepath = os.path.join(level_folder, filename)
-                    counter += 1
+            # Check for duplicate files - prevent duplicates entirely
+            # Check if file already exists in database with same name and collection
+            existing_doc = db.session.query(Document).filter_by(
+                filename=filename,
+                collection_name=collection_name
+            ).first()
+            
+            # Also check if file exists on disk
+            if existing_doc or os.path.exists(filepath):
+                failed_files.append({
+                    'filename': filename,
+                    'error': f'File "{filename}" already exists in collection "{collection_name}". Duplicate files are not allowed.'
+                })
+                continue
 
             try:
                 file.save(filepath)
@@ -1868,76 +1874,151 @@ def manage_document(document_id):
         if new_collection not in COLLECTION_LEVELS:
             return jsonify({'error': 'Invalid collection level'}), 400
         
-        # Get current file path
-        current_folder = os.path.join('uploads', old_collection)
-        current_filepath = os.path.join(current_folder, old_filename)
+        # Find the actual file location (might be in wrong folder or uploads root)
+        def find_file_location(filename, collection_name):
+            """Search for file in correct location, wrong collection folders, or uploads root"""
+            # First check correct location
+            correct_path = os.path.join('uploads', collection_name, filename)
+            if os.path.exists(correct_path):
+                return correct_path, collection_name
+            
+            # Check uploads root
+            root_path = os.path.join('uploads', filename)
+            if os.path.exists(root_path):
+                return root_path, None
+            
+            # Check all collection folders
+            for collection in COLLECTION_LEVELS:
+                check_path = os.path.join('uploads', collection, filename)
+                if os.path.exists(check_path):
+                    return check_path, collection
+            
+            return None, None
+        
+        # Find where the file actually is
+        actual_filepath, actual_collection = find_file_location(old_filename, old_collection)
+        
+        if not actual_filepath:
+            return jsonify({'error': 'Document file not found'}), 404
         
         # Handle file replacement - re-index the document
-        if file_updated and os.path.exists(current_filepath):
+        if file_updated and os.path.exists(actual_filepath):
             try:
                 # Delete old chunks from ChromaDB
-                indexer = Indexer(current_filepath)
-                indexer.delete_document_from_index(level=old_collection, file_path=current_filepath)
+                indexer = Indexer(actual_filepath)
+                indexer.delete_document_from_index(level=actual_collection or old_collection, file_path=actual_filepath)
                 
                 # Re-index the updated document
-                indexer.index_document(level=old_collection, replace_existing=True)
-                print(f"✅ Re-indexed document: {old_filename} in collection: {old_collection}")
+                indexer.index_document(level=actual_collection or old_collection, replace_existing=True)
+                print(f"✅ Re-indexed document: {old_filename} in collection: {actual_collection or old_collection}")
             except Exception as e:
                 return jsonify({'error': f'Re-indexing failed: {str(e)}'}), 500
         
-        # Update filename in database
+        # Determine final filename and collection
+        final_filename = new_filename if new_filename else old_filename
+        final_collection = new_collection
+        
+        # Update filename in database if changed
         if new_filename and new_filename != old_filename:
-            # If filename changed, we need to rename the file
-            new_filepath = os.path.join(current_folder, new_filename)
-            if os.path.exists(current_filepath) and not os.path.exists(new_filepath):
+            document.filename = new_filename
+        
+        # Handle collection change - move file to correct location
+        if final_collection != old_collection or actual_collection != final_collection:
+            try:
+                # Create new folder
+                new_folder = os.path.join('uploads', final_collection)
+                os.makedirs(new_folder, exist_ok=True)
+                
+                # Determine target file path
+                target_filepath = os.path.join(new_folder, final_filename)
+                
+                # Check for duplicates in target location - prevent duplicates entirely
+                if os.path.exists(target_filepath) and target_filepath != actual_filepath:
+                    # Check if another document already exists with this filename in the target collection
+                    existing_doc = db.session.query(Document).filter_by(
+                        filename=final_filename,
+                        collection_name=final_collection
+                    ).filter(Document.id != document.id).first()
+                    
+                    if existing_doc:
+                        return jsonify({
+                            'error': f'File "{final_filename}" already exists in collection "{final_collection}". Duplicate files are not allowed.'
+                        }), 400
+                    
+                    # If file exists on disk but not in database, it's an orphaned file
+                    # We'll still prevent the move to avoid overwriting
+                    return jsonify({
+                        'error': f'File "{final_filename}" already exists in the target location. Duplicate files are not allowed.'
+                    }), 400
+                
+                # Move file to new location (only if different from current location)
+                if target_filepath != actual_filepath:
+                    if os.path.exists(actual_filepath):
+                        import shutil
+                        
+                        # Delete from old collection index BEFORE moving (if collection changed)
+                        if actual_collection and actual_collection != final_collection:
+                            try:
+                                indexer = Indexer(actual_filepath)  # Use old path for deletion
+                                indexer.delete_document_from_index(level=actual_collection, file_path=actual_filepath)
+                                print(f"✅ Deleted document from old collection index: {actual_collection}")
+                            except Exception as e:
+                                print(f"⚠️ Warning: Could not delete from old index: {e}")
+                        
+                        # Move the file
+                        shutil.move(actual_filepath, target_filepath)
+                        print(f"✅ Moved file from {actual_filepath} to {target_filepath}")
+                        
+                        # Re-index in new collection if reindex is requested or collection changed
+                        if reindex or (final_collection != old_collection):
+                            try:
+                                indexer_new = Indexer(target_filepath)
+                                indexer_new.index_document(level=final_collection, replace_existing=True)
+                                print(f"✅ Re-indexed document in new collection: {final_collection}")
+                            except Exception as e:
+                                print(f"⚠️ Warning: Could not re-index in new collection: {e}")
+                
+                # Update collection name in database
+                document.collection_name = final_collection
+                
+            except Exception as e:
+                import traceback
+                error_trace = traceback.format_exc()
+                print(f"Error moving file: {error_trace}")
+                return jsonify({'error': f'Failed to move file: {str(e)}'}), 500
+        elif final_filename != old_filename:
+            # Only filename changed, no collection change - just rename in place
+            current_folder = os.path.join('uploads', old_collection)
+            new_filepath = os.path.join(current_folder, final_filename)
+            
+            # Check for duplicates - prevent duplicates entirely
+            if os.path.exists(new_filepath) and new_filepath != actual_filepath:
+                # Check if another document already exists with this filename in the same collection
+                existing_doc = db.session.query(Document).filter_by(
+                    filename=final_filename,
+                    collection_name=old_collection
+                ).filter(Document.id != document.id).first()
+                
+                if existing_doc:
+                    return jsonify({
+                        'error': f'File "{final_filename}" already exists in collection "{old_collection}". Duplicate files are not allowed.'
+                    }), 400
+                
+                # If file exists on disk but not in database, prevent overwriting
+                return jsonify({
+                    'error': f'File "{final_filename}" already exists in the target location. Duplicate files are not allowed.'
+                }), 400
+            
+            if os.path.exists(actual_filepath) and not os.path.exists(new_filepath):
                 import shutil
-                shutil.move(current_filepath, new_filepath)
+                shutil.move(actual_filepath, new_filepath)
                 # Re-index with new filename
                 try:
                     indexer = Indexer(new_filepath)
-                    indexer.delete_document_from_index(level=old_collection, file_path=current_filepath)
+                    indexer.delete_document_from_index(level=old_collection, file_path=actual_filepath)
                     indexer.index_document(level=old_collection, replace_existing=True)
                 except Exception as e:
                     print(f"⚠️ Warning: Could not re-index after filename change: {e}")
-            document.filename = new_filename
-        
-        # Handle collection change with re-indexing
-        if reindex and new_collection != old_collection:
-            try:
-                # Get file path (use new filename if it was updated)
-                file_to_move = document.filename if new_filename != old_filename else old_filename
-                old_folder = os.path.join('uploads', old_collection)
-                old_filepath = os.path.join(old_folder, file_to_move)
-                
-                # Create new folder
-                new_folder = os.path.join('uploads', new_collection)
-                os.makedirs(new_folder, exist_ok=True)
-                
-                # Copy file to new location
-                new_filepath = os.path.join(new_folder, file_to_move)
-                if os.path.exists(old_filepath):
-                    import shutil
-                    shutil.copy2(old_filepath, new_filepath)
-                    
-                    # Delete from old collection
-                    indexer = Indexer(old_filepath)
-                    indexer.delete_document_from_index(level=old_collection, file_path=old_filepath)
-                    
-                    # Re-index in new collection
-                    indexer_new = Indexer(new_filepath)
-                    indexer_new.index_document(level=new_collection, replace_existing=False)
-                    
-                    # Update database
-                    document.collection_name = new_collection
-                else:
-                    return jsonify({'error': 'Original file not found'}), 404
-                    
-            except Exception as e:
-                return jsonify({'error': f'Re-indexing failed: {str(e)}'}), 500
-        else:
-            # Just update collection name without re-indexing
-            if new_collection != old_collection:
-                document.collection_name = new_collection
         
         db.session.commit()
         return jsonify({'success': True, 'message': 'Document updated successfully'})
@@ -2104,4 +2185,4 @@ def init_db():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='192.168.0.102', port=5000)
