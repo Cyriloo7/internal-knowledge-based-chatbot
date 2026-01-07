@@ -1411,14 +1411,18 @@ select:focus {
   margin-left: 280px;
   flex: 1;
   padding: 40px;
-  max-width: 1400px;
+  max-width: calc(100vw - 280px);
+  width: calc(100vw - 280px);
   overflow-y: auto;
   height: 100vh;
+  box-sizing: border-box;
 }
 
 /* When sidebar is collapsed, shift main content left to match */
 .sidebar.collapsed ~ .main-content {
   margin-left: 80px;
+  max-width: calc(100vw - 80px);
+  width: calc(100vw - 80px);
 }
 
 .page-header {
@@ -1593,7 +1597,7 @@ select:focus {
 
 /* Chat Interface - FIXED HEIGHT */
 .chat-container {
-  margin-left: 560px;
+  left: 560px; /* 280px (sidebar) + 280px (conversations sidebar) */
   width: calc(100vw - 560px);
   height: 100vh;
   display: flex;
@@ -1601,16 +1605,54 @@ select:focus {
   background: var(--white);
   position: fixed;
   top: 0;
-  right: 0;
+  right: auto; /* Don't align to right, use left positioning */
   overflow: hidden;
-  transition: margin-left 0.3s ease, width 0.3s ease;
+  transition: left 0.3s ease, width 0.3s ease, right 0.3s ease;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  z-index: 10; /* Ensure chat container is above overlay (998 when active) but below sidebars (1000) */
+  pointer-events: auto; /* Ensure interactions work */
 }
 
-/* Sidebar collapsed */
-.sidebar.collapsed ~ .conversations-sidebar ~ .chat-container {
-  margin-left: 360px;
-  width: calc(100vw - 360px);
+/* Ensure all interactive elements in chat container work */
+.chat-container * {
+  pointer-events: auto;
+}
+
+/* When overlay is not active, ensure it doesn't block */
+.mobile-overlay:not(.active) {
+  pointer-events: none !important;
+  display: none !important;
+}
+
+/* Sidebar collapsed - default: move to left when sidebar is collapsed */
+/* This is the base rule - applies when conversations sidebar is hidden or not visible */
+.sidebar.collapsed ~ .chat-container {
+  left: 80px !important; /* Only collapsed sidebar (80px) */
+  width: calc(100vw - 80px) !important;
+  right: auto !important;
+}
+
+/* Sidebar collapsed - when conversations sidebar is visible (large screens ≥1200px), account for both */
+/* Only apply this on large screens where conversations sidebar is actually visible */
+/* This more specific selector will override the general rule above when conversations sidebar exists */
+@media (min-width: 1200px) {
+  /* When conversations sidebar is visible, use 360px */
+  .sidebar.collapsed ~ .conversations-sidebar ~ .chat-container {
+    left: 360px !important; /* 80px (collapsed sidebar) + 280px (conversations sidebar) */
+    width: calc(100vw - 360px) !important;
+    right: auto !important;
+  }
+  
+  /* Override: when conversations sidebar is hidden (display: none), use 80px */
+  /* This needs to be equally specific to override the rule above */
+  .sidebar.collapsed ~ .conversations-sidebar[style*="display: none"] ~ .chat-container,
+  .sidebar.collapsed ~ .conversations-sidebar[style*="display:none"] ~ .chat-container,
+  .sidebar.collapsed ~ .conversations-sidebar[style*="visibility: hidden"] ~ .chat-container {
+    left: 80px !important;
+    width: calc(100vw - 80px) !important;
+    right: auto !important;
+  }
 }
 
 .sidebar.collapsed ~ .conversations-sidebar {
@@ -1731,6 +1773,9 @@ select:focus {
   margin: 32px 0;
   padding: 16px 0;
   position: relative;
+  z-index: 2;
+  clear: both;
+  width: 100%;
 }
 
 .separator-line {
@@ -1762,14 +1807,20 @@ select:focus {
 .message-section {
   width: 100%;
   min-height: 0;
+  position: relative;
+  clear: both;
 }
 
 .history-section {
   position: relative;
+  z-index: 1;
+  clear: both;
 }
 
 .new-section {
   position: relative;
+  z-index: 1;
+  clear: both;
 }
 
 /* Make sections more distinct when both have content */
@@ -1822,6 +1873,9 @@ select:focus {
   margin-bottom: 24px;
   animation: fadeIn 0.3s;
   max-width: 100%;
+  position: relative;
+  z-index: 1;
+  clear: both;
 }
 
 @keyframes fadeIn {
@@ -1858,6 +1912,9 @@ select:focus {
   line-height: 1.6;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  position: relative;
+  z-index: 1;
+  display: block;
 }
 
 .message-system {
@@ -2082,7 +2139,7 @@ select:focus {
 
 /* Mobile Overlay/Backdrop */
 .mobile-overlay {
-  display: none;
+  display: none !important;
   position: fixed;
   top: 0;
   left: 0;
@@ -2093,11 +2150,13 @@ select:focus {
   backdrop-filter: blur(4px);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .mobile-overlay.active {
-  display: block;
+  display: block !important;
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* Mobile Bottom Navigation */
@@ -2189,6 +2248,8 @@ select:focus {
 
   .app-container {
     flex-direction: column;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
   }
 
   /* Sidebar with overlay */
@@ -2470,6 +2531,11 @@ select:focus {
     width: 100%;
     margin: 0;
     padding: 0;
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .chat-header {
@@ -2535,7 +2601,32 @@ select:focus {
 
   .chat-messages {
     padding: 16px;
-    min-height: calc(100vh - 200px);
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column; /* Normal column order - newest messages at bottom */
+  }
+  
+  /* Ensure message sections maintain proper order */
+  .chat-messages .message-section {
+    display: block; /* Use block layout instead of flex to maintain natural order */
+    order: 0; /* Normal document order */
+  }
+  
+  /* Ensure messages appear in document order within sections */
+  .message-section .message {
+    display: flex; /* Keep flex for message layout */
+    order: 0; /* Normal document order */
+    margin-bottom: 24px !important; /* Ensure spacing between messages */
+    width: 100%;
+  }
+  
+  /* Prevent message overlap */
+  .message + .message {
+    margin-top: 0; /* Remove top margin, rely on bottom margin */
   }
 
   .chat-input-container {
@@ -2545,6 +2636,9 @@ select:focus {
     background: var(--white);
     border-top: 1px solid var(--border);
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    z-index: 50;
+    flex-shrink: 0;
+    margin-top: auto; /* Push to bottom */
   }
 
   .chat-input-container form {
@@ -2663,11 +2757,34 @@ select:focus {
   }
 
   .main-content {
-    margin-left: 520px;
+    margin-left: 240px;
+    max-width: calc(100vw - 240px);
+    width: calc(100vw - 240px);
+  }
+  
+  .sidebar.collapsed ~ .main-content {
+    margin-left: 80px;
+    max-width: calc(100vw - 80px);
+    width: calc(100vw - 80px);
   }
 
   .chat-container {
-    margin-left: 0;
+    left: 240px; /* 240px (tablet sidebar) */
+    width: calc(100vw - 240px);
+    right: auto;
+  }
+  
+  .sidebar.collapsed ~ .chat-container {
+    left: 80px !important; /* Collapsed sidebar (80px) */
+    width: calc(100vw - 80px) !important;
+    right: auto !important;
+  }
+  
+  /* Ensure collapsed rule overrides conversations sidebar rule on tablet */
+  .sidebar.collapsed ~ .conversations-sidebar ~ .chat-container {
+    left: 80px !important;
+    width: calc(100vw - 80px) !important;
+    right: auto !important;
   }
 }
 
@@ -2864,8 +2981,37 @@ select:focus-visible {
   background: var(--white);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for table container */
+.table-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-lighter);
+}
+
+/* Firefox scrollbar */
+.table-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg-secondary);
 }
 
 /* Admin Panel Filter and Sort Controls */
@@ -3012,6 +3158,7 @@ select:focus-visible {
 
 .data-table {
   width: 100%;
+  min-width: 800px; /* Ensure table doesn't shrink too much */
   border-collapse: collapse;
 }
 
@@ -3029,12 +3176,21 @@ select:focus-visible {
   letter-spacing: 0.5px;
   background: var(--bg-secondary);
   border-bottom: 2px solid var(--border);
+  white-space: nowrap;
 }
 
 .data-table td {
   padding: 16px;
   border-top: 1px solid var(--border);
   font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Allow wrapping for specific cells if needed */
+.data-table td.allow-wrap,
+.data-table th.allow-wrap {
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .data-table tr {
@@ -3914,15 +4070,70 @@ textarea {
   padding-right: 48px;
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
+/* Responsive - Hide conversations sidebar at medium sizes */
+@media (max-width: 1199px) {
   .conversations-sidebar {
     transform: translateX(-100%);
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Allow conversations sidebar to be visible when opened via toggle button */
+  .conversations-sidebar.open {
+    display: flex !important;
+    visibility: visible !important;
+    transform: translateX(0) !important;
+    position: fixed !important;
+    left: 0 !important;
+    z-index: 1000 !important;
+    width: 320px !important;
+    max-width: 90vw !important;
+    height: 100vh !important;
+    background: var(--white) !important;
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .main-content {
+    margin-left: 280px !important;
+    max-width: calc(100vw - 280px) !important;
+    width: calc(100vw - 280px) !important;
+  }
+  
+  .sidebar.collapsed ~ .main-content {
+    margin-left: 80px !important;
+    max-width: calc(100vw - 80px) !important;
+    width: calc(100vw - 80px) !important;
   }
 
   .chat-container {
-    margin-left: 280px;
+    left: 280px; /* Only main sidebar (280px) */
     width: calc(100vw - 280px);
+    right: auto;
+  }
+  
+  .sidebar.collapsed ~ .chat-container {
+    left: 80px !important; /* Collapsed sidebar (80px) */
+    width: calc(100vw - 80px) !important;
+    right: auto !important;
+  }
+  
+  /* Ensure collapsed rule overrides any conversations sidebar rule on medium screens */
+  .sidebar.collapsed ~ .conversations-sidebar ~ .chat-container {
+    left: 80px !important;
+    width: calc(100vw - 80px) !important;
+    right: auto !important;
+  }
+  
+  /* When conversations sidebar is open, adjust chat container position */
+  .conversations-sidebar.open ~ .chat-container {
+    left: 320px !important;
+    width: calc(100vw - 320px) !important;
+  }
+  
+  /* When sidebar is collapsed and conversations sidebar is open */
+  .sidebar.collapsed ~ .conversations-sidebar.open ~ .chat-container {
+    left: 400px !important; /* 80px (collapsed sidebar) + 320px (conversations sidebar) */
+    width: calc(100vw - 400px) !important;
   }
 }
 
@@ -3932,8 +4143,10 @@ textarea {
   }
 
   .sidebar {
-    width: 0;
+    width: 0 !important;
     transform: translateX(-100%);
+    position: fixed;
+    left: -280px;
   }
 
   .conversations-sidebar {
@@ -3942,15 +4155,50 @@ textarea {
   }
 
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
+    padding: 20px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
     height: auto;
+    box-sizing: border-box;
+  }
+
+  /* Ensure main-content is properly aligned on mobile regardless of sidebar state */
+  .sidebar.collapsed ~ .main-content,
+  .sidebar:not(.collapsed) ~ .main-content,
+  .sidebar.open ~ .main-content {
+    margin-left: 0 !important;
+    padding: 20px 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .chat-container {
-    margin-left: 0;
-    width: 100vw;
+    left: 0 !important;
+    right: auto !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
     position: relative;
     height: 100vh;
+  }
+  
+  /* Ensure no gap from collapsed sidebar on mobile */
+  .sidebar.collapsed ~ .chat-container {
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+  
+  .sidebar.collapsed ~ .conversations-sidebar ~ .chat-container {
+    left: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
   }
 
   .dashboard-grid {
@@ -3969,6 +4217,100 @@ textarea {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  /* Mobile page header adjustments for dashboard and admin */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .page-header > div:first-child {
+    width: 100%;
+  }
+
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Admin panel mobile adjustments */
+  .admin-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tab-button {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .admin-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .admin-search,
+  .admin-filters {
+    width: 100%;
+  }
+
+  .admin-filters {
+    display: flex;
+    gap: 8px;
+  }
+
+  .admin-filters .filter-select {
+    flex: 1;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 800px;
+    font-size: 13px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 8px;
+  }
+
+  /* Stats grid mobile adjustments */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  /* Analytics charts mobile adjustments */
+  .analytics-charts {
+    flex-direction: column;
+  }
+
+  .chart-card {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .chart-container {
+    overflow-x: auto;
   }
 }
 

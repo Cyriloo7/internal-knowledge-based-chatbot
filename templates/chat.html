@@ -271,6 +271,23 @@
               </svg>
             </button>
           </div>
+          <button
+            class="conversations-close-btn"
+            id="conversationsCloseBtn"
+            title="Close conversations"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
         <div class="conversations-list" id="conversationsList">
           <!-- Conversations will be loaded here -->
@@ -287,6 +304,25 @@
             </div>
           </div>
           <div class="chat-header-right">
+            <!-- Conversations History Toggle Button (visible when sidebar is hidden) -->
+            <button
+              class="conversations-toggle-btn"
+              id="conversationsToggleBtn"
+              onclick="toggleConversationsSidebar()"
+              title="Show conversation history"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span class="conversations-toggle-label">History</span>
+            </button>
             <div class="global-search-container">
               <input
                 type="text"
@@ -1157,6 +1193,53 @@
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebarCollapsed', isCollapsed);
         updateSidebarToggleIcon(isCollapsed);
+        // Update chat container position based on sidebar state and conversations sidebar visibility
+        updateChatContainerPosition();
+      }
+      
+      // Update chat container position when sidebar state changes
+      function updateChatContainerPosition() {
+        const sidebar = document.querySelector('.sidebar');
+        const conversationsSidebar = document.querySelector('.conversations-sidebar');
+        const chatContainer = document.querySelector('.chat-container');
+        
+        if (!sidebar || !chatContainer) return;
+        
+        // Mobile view: always use full width, no gaps
+        if (window.innerWidth <= 768) {
+          chatContainer.style.left = '0';
+          chatContainer.style.marginLeft = '0';
+          chatContainer.style.paddingLeft = '0';
+          chatContainer.style.width = '100vw';
+          chatContainer.style.maxWidth = '100vw';
+          chatContainer.style.right = 'auto';
+          return;
+        }
+        
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        const isConversationsVisible = conversationsSidebar && 
+          window.getComputedStyle(conversationsSidebar).display !== 'none' &&
+          window.getComputedStyle(conversationsSidebar).visibility !== 'hidden' &&
+          conversationsSidebar.offsetWidth > 0;
+        
+        if (isCollapsed) {
+          if (isConversationsVisible && window.innerWidth >= 1200) {
+            // Both sidebars: collapsed (80px) + conversations (280px) = 360px
+            chatContainer.style.left = '360px';
+            chatContainer.style.width = 'calc(100vw - 360px)';
+          } else {
+            // Only collapsed sidebar: 80px
+            chatContainer.style.left = '80px';
+            chatContainer.style.width = 'calc(100vw - 80px)';
+          }
+        } else {
+          // Reset to let CSS handle it
+          chatContainer.style.left = '';
+          chatContainer.style.width = '';
+        }
+        chatContainer.style.right = 'auto';
+        chatContainer.style.marginLeft = '';
+        chatContainer.style.paddingLeft = '';
       }
 
       function updateSidebarToggleIcon(isCollapsed) {
@@ -2031,46 +2114,100 @@
                   conversationsSidebar.classList.remove('open');
               }
 
+              // Force sidebar to be visible and positioned correctly
+              if (isOpening) {
+                  sidebar.style.display = 'flex';
+                  sidebar.style.visibility = 'visible';
+                  sidebar.style.opacity = '1';
+                  sidebar.style.left = '0';
+                  sidebar.style.zIndex = '1001';
+                  sidebar.style.position = 'fixed';
+                  sidebar.style.top = '0';
+                  sidebar.style.height = '100vh';
+                  sidebar.style.width = '280px';
+                  sidebar.style.maxWidth = '85vw';
+                  sidebar.style.background = 'var(--white)';
+              } else {
+                  sidebar.style.left = '-280px';
+              }
+
               // Show/hide overlay
               if (overlay) {
                   if (isOpening) {
                       overlay.classList.add('active');
+                      overlay.style.zIndex = '998';
+                      overlay.style.display = 'block';
                   } else {
                       overlay.classList.remove('active');
+                      overlay.style.display = 'none';
                   }
               }
-
-              // Force sidebar to be visible
-              sidebar.style.display = 'flex';
-              sidebar.style.visibility = 'visible';
-              sidebar.style.opacity = '1';
           }
       }
 
-      function toggleMobileConversationsSidebar() {
+      function toggleConversationsSidebar() {
           const conversationsSidebar = document.querySelector('.conversations-sidebar');
           const sidebar = document.querySelector('.sidebar');
           const overlay = document.getElementById('mobileOverlay');
+          const windowWidth = window.innerWidth;
+          
+          // Update chat container position after toggling
+          setTimeout(() => {
+              updateChatContainerPosition();
+          }, 100);
 
-          if (window.innerWidth <= 768) {
-              const isOpening = !conversationsSidebar?.classList.contains('open');
+          // Work on mobile and medium screens (where sidebar is hidden)
+          if (windowWidth <= 1199) {
+              if (!conversationsSidebar) return;
+              
+              const isOpening = !conversationsSidebar.classList.contains('open');
 
-              conversationsSidebar?.classList.toggle('open');
+              // Toggle the open class - CSS will handle the visibility
+              conversationsSidebar.classList.toggle('open');
 
               // Close main sidebar when opening conversations sidebar
               if (isOpening) {
                   sidebar?.classList.remove('open');
               }
 
+              // Additional inline styles to ensure visibility (CSS .open class should handle most of this)
+              if (isOpening) {
+                  // Set inline styles as fallback (CSS .open class with !important should take precedence)
+                  conversationsSidebar.style.display = 'flex';
+                  conversationsSidebar.style.visibility = 'visible';
+                  conversationsSidebar.style.zIndex = '1000';
+                  conversationsSidebar.style.left = '0';
+                  conversationsSidebar.style.transform = 'translateX(0)';
+                  conversationsSidebar.style.position = 'fixed';
+                  conversationsSidebar.style.width = windowWidth <= 768 ? '320px' : '320px';
+                  conversationsSidebar.style.maxWidth = '90vw';
+                  conversationsSidebar.style.height = '100vh';
+                  conversationsSidebar.style.background = 'var(--white)';
+                  conversationsSidebar.style.boxShadow = '2px 0 20px rgba(0, 0, 0, 0.15)';
+              } else {
+                  // Reset styles when closing
+                  conversationsSidebar.style.transform = 'translateX(-100%)';
+                  conversationsSidebar.style.display = 'none';
+                  conversationsSidebar.style.visibility = 'hidden';
+              }
+
               // Show/hide overlay
               if (overlay) {
                   if (isOpening) {
                       overlay.classList.add('active');
+                      overlay.style.zIndex = '998'; // Ensure overlay is below sidebar
+                      overlay.style.display = 'block';
                   } else {
                       overlay.classList.remove('active');
+                      overlay.style.display = 'none';
                   }
               }
           }
+      }
+
+      function toggleMobileConversationsSidebar() {
+          // Use the main toggle function
+          toggleConversationsSidebar();
       }
 
       function closeAllMobileSidebars() {
@@ -2078,9 +2215,63 @@
           const conversationsSidebar = document.querySelector('.conversations-sidebar');
           const overlay = document.getElementById('mobileOverlay');
 
-          if (sidebar) sidebar.classList.remove('open');
-          if (conversationsSidebar) conversationsSidebar.classList.remove('open');
-          if (overlay) overlay.classList.remove('active');
+          // Close sidebar
+          if (sidebar) {
+              sidebar.classList.remove('open');
+              // Reset inline styles
+              sidebar.style.left = '';
+              sidebar.style.transform = '';
+              sidebar.style.display = '';
+              sidebar.style.visibility = '';
+              sidebar.style.zIndex = '';
+              sidebar.style.position = '';
+              sidebar.style.width = '';
+              sidebar.style.maxWidth = '';
+              sidebar.style.height = '';
+              sidebar.style.background = '';
+          }
+          
+          // Close conversations sidebar
+          if (conversationsSidebar) {
+              conversationsSidebar.classList.remove('open');
+              // Reset inline styles
+              conversationsSidebar.style.display = '';
+              conversationsSidebar.style.visibility = '';
+              conversationsSidebar.style.opacity = '';
+              conversationsSidebar.style.zIndex = '';
+              conversationsSidebar.style.left = '';
+              conversationsSidebar.style.transform = '';
+              conversationsSidebar.style.position = '';
+              conversationsSidebar.style.width = '';
+              conversationsSidebar.style.maxWidth = '';
+              conversationsSidebar.style.height = '';
+              conversationsSidebar.style.background = '';
+              conversationsSidebar.style.boxShadow = '';
+          }
+          
+          // Hide overlay completely
+          if (overlay) {
+              overlay.classList.remove('active');
+              overlay.style.display = 'none';
+              overlay.style.zIndex = '';
+              overlay.style.opacity = '';
+              overlay.style.pointerEvents = 'none';
+          }
+          
+          // Update chat container position after closing
+          setTimeout(() => {
+              updateChatContainerPosition();
+          }, 100);
+      }
+      
+      // Close conversations sidebar when clicking overlay (works on mobile and medium screens)
+      const mobileOverlay = document.getElementById('mobileOverlay');
+      if (mobileOverlay) {
+          mobileOverlay.addEventListener('click', () => {
+              if (window.innerWidth <= 1199) {
+                  closeAllMobileSidebars();
+              }
+          });
       }
 
       // Create new conversation
@@ -2690,9 +2881,39 @@
 
       if (sidebar) {
           sidebarObserver.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+          // Also observe for collapsed state changes
+          const sidebarStateObserver = new MutationObserver(() => {
+              updateChatContainerPosition();
+          });
+          sidebarStateObserver.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
       }
       if (conversationsSidebar) {
           sidebarObserver.observe(conversationsSidebar, { attributes: true, attributeFilter: ['class'] });
+          // Observe conversations sidebar visibility changes
+          const conversationsObserver = new MutationObserver(() => {
+              updateChatContainerPosition();
+          });
+          conversationsObserver.observe(conversationsSidebar, { 
+              attributes: true, 
+              attributeFilter: ['class', 'style'],
+              attributeOldValue: false
+          });
+      }
+      
+      // Update position on window resize
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+          clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+              updateChatContainerPosition();
+          }, 100);
+      });
+      
+      // Update position on page load
+      if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', updateChatContainerPosition);
+      } else {
+          updateChatContainerPosition();
       }
 
       // Swipe gestures for mobile sidebars
